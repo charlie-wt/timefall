@@ -3,29 +3,11 @@ version 18
 __lua__
 
 #include utils.lua
+#include player.lua
 
--- params ----------------
-run_speed = 3      -- run speed.
-jump_height = 30   -- jump height.
-gravity = 0.8      -- gravity amount.
-accl = 4           -- #frames to accelerate to run_speed.
-start_pos = {x=64, y=90}
-
-solid_tiles = {003,006,007,013,014,015}
--- pltfm_tiles = {007,013,014,015}
-
--- derived from params ---
-jump_speed = sqrt(2 * gravity * jump_height)
-
--- state -----------------
-pos = {x=0,y=0}
-vel = {x=0,y=0}
-grounded = false
-was_grounded = grounded
-accelerated_for_frames = 0
-frame = 0
-collision_x = 0
-collision_y = 0
+state = {
+	frame = 0
+}
 
 -- debug stuff.
 frame_by_frame=false
@@ -35,212 +17,7 @@ dbc={10}
 
 
 function _init()
-	pos = start_pos
-end
-
--- helper functions ----
-function player_tile()
-	return {x=round(pos.x/8), y=round(pos.y/8)}
-end
-
--- get the list of tiles ({x,y}) that the player will occupy next frame, if
--- their velocity is `vl` (defaults to `vel`)
-function player_tiles(vl)
-	local vl = vl or vel
-	local future_pos = {
-		x=pos.x+vl.x,
-		y=pos.y+vl.y
-	}
-
-	local future_tiles = {
-		lft=flr(future_pos.x/8),
-		rgt=ceil(future_pos.x/8),
-		top=flr(future_pos.y/8),
-		btm=ceil(future_pos.y/8)
-	}
-
-	local tiles = {}
-	for j=future_tiles.top, future_tiles.btm do
-		for i=future_tiles.lft, future_tiles.rgt do
-			add(tiles, {x=i,y=j})
-		end
-	end
-
-	return tiles
-end
-
--- main functions ------
-function input()
-	-- x
-	if btn(0) then
-		accelerated_for_frames -= 2
-	elseif btn(1) then
-		accelerated_for_frames += 2
-	end
-
-	if accelerated_for_frames > 0 then
-		accelerated_for_frames -= 1
-	elseif accelerated_for_frames < 0 then
-		accelerated_for_frames += 1
-	end
-	accelerated_for_frames = min(accl, accelerated_for_frames)
-	accelerated_for_frames = max(-accl, accelerated_for_frames)
-	local w = accelerated_for_frames / accl
-	vel.x = run_speed * w
-
-	-- y
-	if btn(2) and grounded then
-		vel.y = -jump_speed
-	end
-
-	if (btn(5)) dbg_on = not dbg_on
-end
-
-function apply_gravity()
-	vel.y += gravity
-end
-
--- get the amount by which the player is colliding in the x dimension.
--- +ve means collider on *left*
-function get_collision_x()
-	local vl = {x=vel.x, y=0}
-	local future_pos = {
-		x=pos.x+vl.x,
-		y=pos.y+vl.y
-	}
-
-	for tile in all(player_tiles(vl)) do
-		local ftrtl = mget(tile.x,tile.y)
-		if (not contains(solid_tiles, ftrtl)) goto cont
-
-		local lft = tile.x*8
-		local rgt = (tile.x+1)*8
-
-		if vel.x > 0 then
-			return lft - (future_pos.x+8)
-		else
-			return rgt - future_pos.x
-		end
-		::cont::
-	end
-	return 0
-end
-
--- get the amount by which the player is colliding in the y dimension.
--- +ve means collider *above*
--- only counts fully solid tiles, ie. not top-solid.
-function collide_y_solid()
-	local vl = {x=0, y=vel.y}
-	local future_pos = {x=pos.x, y=pos.y+vl.y}
-
-	for tile in all(player_tiles(vl)) do
-		local ftrtl = mget(tile.x,tile.y)
-		solid = contains(solid_tiles, ftrtl)
-		if (not solid) goto cont
-
-		local top = tile.y*8
-		local btm = (tile.y+1)*8
-
-		if vel.y > 0 then
-			return top - (future_pos.y+8)
-		else
-			return btm - future_pos.y
-		end
-		::cont::
-	end
-	return 0
-end
-get_collision_y = collide_y_solid
-
--- -- by how much are we colliding with only top-solid ground?  (ie. if also
--- -- colliding with fully solid ground, returns `0`).
--- function collide_y_platform()
--- 	local vl = {x=0,y=vel.y}
--- 	local ftr_y = pos.y+vl.y
-
--- 	local intersection = 0
--- 	for tile in all(player_tiles(vl)) do
--- 		local ftrtl = mget(tile.x,tile.y)
--- 		solid = contains(solid_tiles, ftrtl)
--- 		pltfm = contains(pltfm_tiles, ftrtl)
-
--- 		if (solid) return 0
--- 		if (not pltfm) goto cont
-
--- 		local top = tile.y*8
-
--- 		if vel.y > 0 then
--- 			intersection = top-(ftr_y+8)
--- 		end
--- 		::cont::
--- 	end
--- 	return intersection
--- end
-
--- -- are we airborne, above some top-solid ground?
--- function above_platform()
--- 	if (collide_y_platform()!=0) return false
-
--- 	local ftr_y = pos.y+vel.y
--- 	local future_tiles = {
--- 		lft=flr(pos.x/8),
--- 		rgt=ceil(pos.x/8),
--- 		btm=ceil(ftr_y/8)
--- 	}
-
--- 	local tiles = {}
--- 	for i=future_tiles.lft,future_tiles.rgt do
--- 		for j=future_tiles.btm,future_tiles.btm+1 do
--- 			if contains(pltfm_tiles, mget(i,j))
--- 			   and ftr_y+8 < j*8 then
--- 			 return true
--- 			end
--- 		end
--- 	end
--- 	return false
--- end
-
--- last_col_y_frame = -1
--- plt_last = false
--- above_plt_last = false
--- -- note: this will essentially compute whether you're colliding with top-solid
--- -- ground once per frame, so be careful when you call it in relation to getting
--- -- input etc.
--- function get_collision_y()
--- 	local solid = collide_y_solid()
--- 	local pltfm = collide_y_platform()
-
--- 	local plt_collision =
--- 		pltfm != 0 and
--- 		(above_plt_last or plt_last)
-
--- 	if last_col_y_frame < frame then
--- 		plt_last = plt_collision
--- 		above_plt_last=above_platform()
--- 	end
--- 	last_col_y_frame = frame
-
--- 	if (plt_collision) return pltfm
--- 	return solid
--- end
-
-function move()
-	collision_y = get_collision_y()
-	local adj_vy = vel.y + collision_y
-	pos.y += adj_vy
-
-	collision_x = get_collision_x()
-	local adj_vx = vel.x + collision_x
-	pos.x += adj_vx
-
-	was_grounded = grounded
-	grounded = collision_y < 0
-
-	if collision_x != 0 then
-		vel.x = 0
-		accelerated_for_frames = 0
-	end
-	if (collision_y != 0) vel.y = 0
+	player:init()
 end
 
 holding = true
@@ -259,46 +36,28 @@ function _update()
 
 	dbg = {}
 
-	input()
-	apply_gravity()
-	move()
+	player:update()
 
-	local dx = "➡️ "
-	if (collision_x > 0) dx = "⬅️ "
-	add(dbg, dx..abs(collision_x))
-	local dy = "⬇️ "
-	if (collision_y > 0) dy = "⬆️ "
-	add(dbg, dy..abs(collision_y))
-	add(dbg, "pos:\t"..pos.x.."\t\t"..pos.y)
-	add(dbg, "vel:\t"..vel.x.."\t\t"..vel.y)
-	if (grounded) add(dbg, "grounded")
+	dbg = player:dbg_txt()
 
-	frame += 1
+	state.frame += 1
 end
 
 function _draw()
-	cls(12)
+	cls(0)
 
 	-- map
 	map(0, 0, 0, 0, 128, 128)
 
-	-- if in debug mode, gridlines
-	-- for collision
+	-- if in debug mode, gridlines for collision
 	if dbg_on then
-		for tile in all(player_tiles()) do
+		for tile in all(player:tiles()) do
 			spr(017, tile.x*8, tile.y*8)
 		end
 	end
 
 	-- player
-	spr(001,pos.x,pos.y)
-
-	-- win message
-	if won then
-		local msg = "you win!"
-		local msgx = 64 - #msg*2
-		print(msg, msgx, 32, 10)
-	end
+	player:draw()
 
 	-- debug text
 	if (not dbg_on) return
