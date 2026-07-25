@@ -28,7 +28,8 @@ sand = {
 	data = nil,
 	t_next_spawn = nil,
 	t_last_fall = nil,
-	pieces_spawned = nil
+	pieces_spawned = nil,
+	pieces_dropped = nil
 }
 
 function sand:pieces_remaining()
@@ -57,18 +58,47 @@ function sand:init()
 	self.t_next_spawn = now + self.initial_spawn_t
 	self.t_last_fall = now
 	self.pieces_spawned = 0
+	self.pieces_dropped = 0
 end
 
-function sand:print_data()
-	printh("data {")
-	if self.data == nil then
-		printh("nil")
-	else
-		for row in all(self.data) do
-			printh(list_str(row))
+-- screen pos tile
+function sand:tile_is_sand(tile)
+	if tile.x < 0 or tile.x > 15 or
+	   tile.y < 0 or tile.y > 15 then
+		return false
+	end
+	return self.data[tile.y + 1][tile.x + 1]
+end
+
+-- screen pos tile
+function sand:set_tile_is_sand(tile, value)
+	if tile.x < 0 or tile.x > 15 or
+	   tile.y < 0 or tile.y > 15 then
+		return
+	end
+	self.data[tile.y + 1][tile.x + 1] = value
+end
+
+-- NOTE: assumes data is initialised but empty (all `false`)
+function sand:predistribute(num_pieces)
+	while num_pieces > 0 do
+		local candidate_tile = {x=flr(rnd(16)), y=flr(rnd(16))}
+		if terrain:tile_is_background(candidate_tile) and (not tile_is_solid(candidate_tile)) then
+			self:set_tile_is_sand(candidate_tile, true)
+			num_pieces -= 1
 		end
 	end
-	printh("}")
+
+	-- TODO #finish: fall until fallen?
+end
+
+function sand:flip()
+	local to_predistribute = self.total_pieces - self.pieces_spawned
+
+	self:init()
+
+	self:predistribute(to_predistribute)
+	self.pieces_spawned = to_predistribute
 end
 
 function sand:spawn()
@@ -80,6 +110,7 @@ function sand:spawn()
 	self:set_tile_is_sand(rnd(self.spawn_positions), true)
 
 	self.pieces_spawned += 1
+	self.pieces_dropped += 1
 end
 
 function above(tile)
@@ -91,8 +122,6 @@ function below(tile)
 end
 
 function sand:fall()
-	self.t_last_fall = time()
-
 	local new_data = init_data()
 
 	function set_new_data(tile, value)
@@ -121,6 +150,7 @@ function sand:update()
 	local now = time()
 
 	if now - self.t_last_fall > self.fall_period_seconds then
+		self.t_last_fall = now
 		self:fall()
 
 		-- note: putting this check in the fall tick check means we'll always spawn at
@@ -134,24 +164,6 @@ function sand:update()
 	if self:tile_is_sand(tiles(player.pos)) then
 		player:die()
 	end
-end
-
--- screen pos tile
-function sand:tile_is_sand(tile)
-	if tile.x < 0 or tile.x > 15 or
-	   tile.y < 0 or tile.y > 15 then
-		return false
-	end
-	return self.data[tile.y + 1][tile.x + 1]
-end
-
--- screen pos tile
-function sand:set_tile_is_sand(tile, value)
-	if tile.x < 0 or tile.x > 15 or
-	   tile.y < 0 or tile.y > 15 then
-		return
-	end
-	self.data[tile.y + 1][tile.x + 1] = value
 end
 
 -- dir: +ve for right, -ve for left
@@ -176,7 +188,7 @@ function sand:try_shunt(tile, dir)
 	end
 end
 
-function sand:draw_pieces_remaining()
+function sand:draw_pieces_remaining(x, y)
 	local colour = self.pieces_remaining_default_colour
 	for val in all(self.pieces_remaining_threshold_colours) do
 		local threshold,col = unpack(val)
@@ -184,7 +196,7 @@ function sand:draw_pieces_remaining()
 			colour = col
 		end
 	end
-	print(tostr(self:pieces_remaining()), 8, 8, colour)
+	print(tostr(self:pieces_remaining()), x, y, colour)
 end
 
 function sand:draw_sand()
@@ -201,4 +213,16 @@ function sand:draw_sand()
 			end
 		end
 	end
+end
+
+function sand:print_data()
+	printh("data {")
+	if self.data == nil then
+		printh("nil")
+	else
+		for row in all(self.data) do
+			printh(list_str(row))
+		end
+	end
+	printh("}")
 end

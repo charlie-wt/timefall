@@ -63,8 +63,6 @@ function platforms:tiles()
 end
 
 function platforms:tile_is_solid(tile)
-	-- TODO #test: is this gonna compare by reference?
-	-- return contains(self:tiles(), tile)
 	for tl in all(self:tiles()) do
 		if tl.x == tile.x and tl.y == tile.y then
 			return true

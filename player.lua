@@ -21,7 +21,7 @@ player = {
 }
 
 function player:init()
-	self.pos = self.start_pos
+	self.pos = shallow_copy(self.start_pos)
 	self.is_dead = false
 end
 

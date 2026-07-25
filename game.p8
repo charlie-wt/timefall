@@ -9,8 +9,8 @@ __lua__
 #include player.lua
 
 state = {
-	frame = 0,
-	cam_pos_tiles = {x=0, y=16}
+	cam_pos_tiles = {x=0, y=16},
+	score_before_current_flip = 0
 }
 
 -- debug stuff.
@@ -46,6 +46,17 @@ function _init()
 	platforms:init()
 end
 
+function total_score()
+	return state.score_before_current_flip + sand.pieces_dropped
+end
+
+function flip_hourglass()
+	state.score_before_current_flip += sand.pieces_spawned
+	platforms:init()
+	sand:flip()
+	player:init()
+end
+
 holding = true
 function _update()
 	if btn(5) then try_toggle_dbg() end
@@ -67,9 +78,12 @@ function _update()
 	player:update()
 	dbg = player:dbg_txt()
 
-	sand:update()
+	if player.pos.y < 0 then
+		flip_hourglass()
+		return
+	end
 
-	state.frame += 1
+	sand:update()
 end
 
 function _draw()
@@ -96,8 +110,10 @@ function _draw()
 	-- player
 	player:draw()
 
-	-- pieces remaining
-	sand:draw_pieces_remaining()
+	-- ui text
+	sand:draw_pieces_remaining(8, 8)
+	print(total_score(), 8, 16, 12)
+
 
 	-- TODO #finish
 	if player.is_dead then
