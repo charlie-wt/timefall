@@ -104,7 +104,7 @@ function sand:fall()
 			local tile = {x=x, y=y}
 			if self:tile_is_sand(tile) then
 				set_new_data(tile, true)
-				if y < 15 and not self:tile_is_solid(below(tile)) then
+				if y < 15 and not tile_is_solid(below(tile)) then
 					set_new_data(tile, false)
 					set_new_data(below(tile), true)
 				end
@@ -145,21 +145,13 @@ function sand:tile_is_sand(tile)
 	return self.data[tile.y + 1][tile.x + 1]
 end
 
+-- screen pos tile
 function sand:set_tile_is_sand(tile, value)
 	if tile.x < 0 or tile.x > 15 or
 	   tile.y < 0 or tile.y > 15 then
 		return
 	end
 	self.data[tile.y + 1][tile.x + 1] = value
-end
-
--- screen pos tile
-function sand:tile_is_solid(tile)
-	if terrain:tile_solid(tile) then
-		return true
-	end
-
-	return self:tile_is_sand(tile)
 end
 
 -- dir: +ve for right, -ve for left
@@ -178,7 +170,7 @@ function sand:try_shunt(tile, dir)
 	end
 	local destination = {x=tile.x + x_inc, y=tile.y}
 
-	if not self:tile_is_solid(destination) then
+	if not tile_is_solid(destination) then
 		self:set_tile_is_sand(tile, false)
 		self:set_tile_is_sand(destination, true)
 	end
@@ -201,7 +193,7 @@ function sand:draw_sand()
 			local tile = {x=x, y=y}
 			if self:tile_is_sand(tile) then
 				local sprite = self.sprites.settled
-				if y < 16 and not self:tile_is_solid(below(tile)) then
+				if y < 16 and not tile_is_solid(below(tile)) then
 					sprite = self.sprites.falling
 				end
 				local pos = pixels(tile)
