@@ -16,11 +16,13 @@ player = {
 	was_grounded = grounded,
 	accelerated_for_frames = 0,
 	collision_x = 0,
-	collision_y = 0
+	collision_y = 0,
+	is_dead = false
 }
 
 function player:init()
 	self.pos = self.start_pos
+	self.is_dead = false
 end
 
 -- get the list of tiles ({x,y}) that the player will occupy next frame, if
@@ -93,7 +95,7 @@ function player:get_collision_x()
 	}
 
 	for tile in all(self:tiles(vl)) do
-		if (not terrain:tile_solid(tile)) goto cont
+		if (not sand:tile_is_solid(tile)) goto cont
 
 		local lft = tile.x*8
 		local rgt = (tile.x+1)*8
@@ -116,7 +118,7 @@ function player:get_collision_y()
 	local future_pos = {x=self.pos.x, y=self.pos.y+vl.y}
 
 	for tile in all(self:tiles(vl)) do
-		if (not terrain:tile_solid(tile)) goto cont
+		if (not sand:tile_is_solid(tile)) goto cont
 
 		local top = tile.y*8
 		local btm = (tile.y+1)*8
@@ -124,6 +126,9 @@ function player:get_collision_y()
 		if self.vel.y > 0 then
 			return top - (future_pos.y+8)
 		else
+			if sand:tile_is_sand(tile) then
+				self:die()
+			end
 			return btm - future_pos.y
 		end
 		::cont::
@@ -174,4 +179,8 @@ function player:draw()
 	-- TODO #finish
 	local current_sprite = self.sprites.fallback
 	spr(current_sprite, self.pos.x, self.pos.y)
+end
+
+function player:die()
+	self.is_dead = true
 end

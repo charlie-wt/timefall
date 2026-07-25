@@ -3,7 +3,7 @@ terrain = {
 }
 
 function terrain:tile_solid(screen_tile_pos)
-	local abs_tile_pos = tile_at(screen_tile_pos)
-	local contents = mget(abs_tile_pos.x, abs_tile_pos.y)
+	local atp = abs_tile_pos(screen_tile_pos)
+	local contents = mget(atp.x, atp.y)
 	return contains(self.solid_tiles, contents)
 end

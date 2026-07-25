@@ -11,11 +11,11 @@ function contains(l,x)
 end
 
 function tiles(pos)
-	return {round(pos.x/8), round(pos.y/8)}
+	return {x=round(pos.x/8), y=round(pos.y/8)}
 end
 
 function pixels(pos)
-	return {pos.x*8, pos.y*8}
+	return {x=pos.x*8, y=pos.y*8}
 end
 
 function shallow_copy(orig)

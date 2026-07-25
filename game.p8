@@ -4,7 +4,7 @@ __lua__
 
 #include utils.lua
 #include terrain.lua
-#include fall.lua
+#include sand.lua
 #include player.lua
 
 state = {
@@ -28,13 +28,16 @@ function try_toggle_dbg()
 	end
 end
 
--- tile at screen position {x,y} (in tiles), adjusted for the camera
-function tile_at(pos)
-	return {x=pos.x + state.cam_pos_tiles.x, y=pos.y + state.cam_pos_tiles.y}
+-- get tile at screen position {x,y} (in tiles), adjusted for the camera into an
+-- absolute position suitable for indexing the map data
+function abs_tile_pos(screen_tile_pos)
+	return {x=screen_tile_pos.x + state.cam_pos_tiles.x,
+	        y=screen_tile_pos.y + state.cam_pos_tiles.y}
 end
 
 function _init()
 	player:init()
+	sand:init()
 end
 
 holding = true
@@ -54,8 +57,9 @@ function _update()
 	dbg = {}
 
 	player:update()
-
 	dbg = player:dbg_txt()
+
+	sand:update()
 
 	state.frame += 1
 end
@@ -66,6 +70,9 @@ function _draw()
 	-- map
 	map(state.cam_pos_tiles.x, state.cam_pos_tiles.y, 0, 0, 128, 128)
 
+	-- sand
+	sand:draw_sand()
+
 	-- if in debug mode, gridlines for collision
 	if dbg_on then
 		for tile in all(player:tiles()) do
@@ -75,6 +82,16 @@ function _draw()
 
 	-- player
 	player:draw()
+
+	-- pieces remaining
+	-- local pieces_remaining_col = 7
+	-- print(tostr(sand.total_pieces - sand.pieces_spawned), 8, 8, 10)
+	sand:draw_pieces_remaining()
+
+	-- TODO #finish
+	if player.is_dead then
+		print("dead", 104, 8, 8)
+	end
 
 	-- debug text
 	if dbg_on then
