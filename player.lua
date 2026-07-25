@@ -1,12 +1,14 @@
 player = {
 	-- params ----------------
-	run_speed = 3,      -- run speed.
-	jump_height = 30,   -- jump height.
-	gravity = 0.8,      -- gravity amount.
-	acceleration_frames = 4,           -- #frames to accelerate to run_speed.
+	run_speed = 3,
+	jump_height = 30,
+	gravity = 0.8,
+	acceleration_frames = 4,
 	start_pos = {x=64, y=96},
+	sprites = {
+		fallback=001
+	},
 
-	-- solid_tiles = {003,006,007,013,014,015},
 	solid_tiles = {033},
 
 	-- state -----------------
@@ -175,5 +177,7 @@ function player:dbg_txt()
 end
 
 function player:draw()
-	spr(001, self.pos.x, self.pos.y)
+	-- TODO #finish
+	local current_sprite = self.sprites.fallback
+	spr(current_sprite, self.pos.x, self.pos.y)
 end
