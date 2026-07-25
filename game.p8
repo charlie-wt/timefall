@@ -42,6 +42,8 @@ end
 
 holding = true
 function _update()
+	if btn(5) then try_toggle_dbg() end
+
 	if frame_by_frame then
 		if holding and not btn(4) then
 			holding = false
