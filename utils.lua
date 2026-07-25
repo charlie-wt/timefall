@@ -35,7 +35,6 @@ end
 function list_str(l)
 	local res = "{"
 	local sep = ""
-	-- for val in all(l) do
 	for _,val in pairs(l) do
 		res = res..sep..tostr(val)
 		sep = ", "
@@ -46,7 +45,6 @@ end
 function table_str(l)
 	local res = "{"
 	local sep = ""
-	-- for val in all(l) do
 	for key,val in pairs(l) do
 		res = res..sep..tostr(key).."="..tostr(val)
 		sep = ", "

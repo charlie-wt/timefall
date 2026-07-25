@@ -1,5 +1,5 @@
 terrain = {
-	solid_tiles = {033}
+	solid_tiles = {033,034,035}
 }
 
 function terrain:tile_solid(screen_tile_pos)
