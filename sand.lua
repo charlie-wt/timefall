@@ -9,7 +9,7 @@ sand = {
 		{x=7,y=0},
 		{x=8,y=0},
 	},
-	fall_period_seconds = 0.1,
+	fall_period_seconds = 0.5,
 
 	-- drawing
 	sprites = {
@@ -82,6 +82,10 @@ function sand:spawn()
 	self.pieces_spawned += 1
 end
 
+function above(tile)
+	return {x=tile.x, y=tile.y - 1}
+end
+
 function below(tile)
 	return {x=tile.x, y=tile.y + 1}
 end
@@ -134,10 +138,18 @@ end
 
 -- screen pos tile
 function sand:tile_is_sand(tile)
+	if tile.x < 0 or tile.x > 15 or
+	   tile.y < 0 or tile.y > 15 then
+		return false
+	end
 	return self.data[tile.y + 1][tile.x + 1]
 end
 
 function sand:set_tile_is_sand(tile, value)
+	if tile.x < 0 or tile.x > 15 or
+	   tile.y < 0 or tile.y > 15 then
+		return
+	end
 	self.data[tile.y + 1][tile.x + 1] = value
 end
 
@@ -148,6 +160,28 @@ function sand:tile_is_solid(tile)
 	end
 
 	return self:tile_is_sand(tile)
+end
+
+-- dir: +ve for right, -ve for left
+function sand:try_shunt(tile, dir)
+	if not self:tile_is_sand(tile) then
+		return
+	end
+
+	if self:tile_is_sand(above(tile)) then
+		return
+	end
+
+	local x_inc = 1
+	if dir < 0 then
+		x_inc = -1
+	end
+	local destination = {x=tile.x + x_inc, y=tile.y}
+
+	if not self:tile_is_solid(destination) then
+		self:set_tile_is_sand(tile, false)
+		self:set_tile_is_sand(destination, true)
+	end
 end
 
 function sand:draw_pieces_remaining()

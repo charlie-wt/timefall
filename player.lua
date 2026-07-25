@@ -98,6 +98,7 @@ function player:get_collision_x()
 		local lft = tile.x*8
 		local rgt = (tile.x+1)*8
 
+		sand:try_shunt(tile, self.vel.x)
 		if self.vel.x > 0 then
 			return lft - (future_pos.x+8)
 		else
