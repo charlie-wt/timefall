@@ -4,9 +4,10 @@ player = {
 	jump_height = 30,   -- jump height.
 	gravity = 0.8,      -- gravity amount.
 	acceleration_frames = 4,           -- #frames to accelerate to run_speed.
-	start_pos = {x=64, y=90},
+	start_pos = {x=64, y=96},
 
-	solid_tiles = {003,006,007,013,014,015},
+	-- solid_tiles = {003,006,007,013,014,015},
+	solid_tiles = {033},
 
 	-- state -----------------
 	pos = {x=0,y=0},
@@ -19,11 +20,7 @@ player = {
 }
 
 function player:init()
-	pos = self.start_pos
-end
-
-function player:tile()
-	return {x=round(self.pos.x/8), y=round(self.pos.y/8)}
+	self.pos = self.start_pos
 end
 
 -- get the list of tiles ({x,y}) that the player will occupy next frame, if
@@ -79,7 +76,7 @@ function player:input()
 		self.vel.y = -self:jump_speed()
 	end
 
-	if (btn(5)) dbg_on = not dbg_on
+	if (btn(5)) try_toggle_dbg()
 end
 
 function player:apply_gravity()
@@ -96,7 +93,8 @@ function player:get_collision_x()
 	}
 
 	for tile in all(self:tiles(vl)) do
-		local future_tile = mget(tile.x, tile.y)
+		local future_tile_pos = tile_at(tile)
+		local future_tile = mget(future_tile_pos.x, future_tile_pos.y)
 		if (not contains(self.solid_tiles, future_tile)) goto cont
 
 		local lft = tile.x*8
@@ -120,7 +118,8 @@ function player:get_collision_y()
 	local future_pos = {x=self.pos.x, y=self.pos.y+vl.y}
 
 	for tile in all(self:tiles(vl)) do
-		local future_tile = mget(tile.x,tile.y)
+		local future_tile_pos = tile_at(tile)
+		local future_tile = mget(future_tile_pos.x, future_tile_pos.y)
 		if (not contains(self.solid_tiles, future_tile)) goto cont
 
 		local top = tile.y*8
@@ -171,6 +170,8 @@ function player:dbg_txt()
 	add(res, "pos:\t"..self.pos.x.."\t\t"..self.pos.y)
 	add(res, "vel:\t"..self.vel.x.."\t\t"..self.vel.y)
 	if (self.grounded) add(res, "grounded")
+
+	return res
 end
 
 function player:draw()
