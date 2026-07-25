@@ -77,6 +77,8 @@ function _draw()
 
 	-- if in debug mode, gridlines for collision
 	if dbg_on then
+		-- local ptp = pixels(tiles(player.pos))
+		-- spr(017, ptp.x, ptp.y)
 		for tile in all(player:tiles()) do
 			spr(017, tile.x*8, tile.y*8)
 		end

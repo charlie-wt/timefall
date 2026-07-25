@@ -126,6 +126,10 @@ function sand:update()
 			self:spawn()
 		end
 	end
+
+	if self:tile_is_sand(tiles(player.pos)) then
+		player:die()
+	end
 end
 
 -- screen pos tile
