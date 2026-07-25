@@ -3,6 +3,8 @@ version 43
 __lua__
 
 #include utils.lua
+#include terrain.lua
+#include fall.lua
 #include player.lua
 
 state = {

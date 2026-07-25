@@ -9,8 +9,6 @@ player = {
 		fallback=001
 	},
 
-	solid_tiles = {033},
-
 	-- state -----------------
 	pos = {x=0,y=0},
 	vel = {x=0,y=0},
@@ -95,9 +93,7 @@ function player:get_collision_x()
 	}
 
 	for tile in all(self:tiles(vl)) do
-		local future_tile_pos = tile_at(tile)
-		local future_tile = mget(future_tile_pos.x, future_tile_pos.y)
-		if (not contains(self.solid_tiles, future_tile)) goto cont
+		if (not terrain:tile_solid(tile)) goto cont
 
 		local lft = tile.x*8
 		local rgt = (tile.x+1)*8
@@ -120,9 +116,7 @@ function player:get_collision_y()
 	local future_pos = {x=self.pos.x, y=self.pos.y+vl.y}
 
 	for tile in all(self:tiles(vl)) do
-		local future_tile_pos = tile_at(tile)
-		local future_tile = mget(future_tile_pos.x, future_tile_pos.y)
-		if (not contains(self.solid_tiles, future_tile)) goto cont
+		if (not terrain:tile_solid(tile)) goto cont
 
 		local top = tile.y*8
 		local btm = (tile.y+1)*8
