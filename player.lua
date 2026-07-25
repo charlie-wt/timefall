@@ -78,7 +78,7 @@ function player:input()
 		self.vel.y = -self:jump_speed()
 	end
 
-	if (btn(5)) try_toggle_dbg()
+	if btn(5) then try_toggle_dbg() end
 end
 
 function player:apply_gravity()

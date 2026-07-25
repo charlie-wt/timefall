@@ -1,16 +1,15 @@
 sand = {
 	total_pieces = 50,
 
-	-- spawning
-	-- TODO #enhancement: might it be better if these are expressed as fall tick counts,
-	-- so that we can *never* spawn *immediately* before falling?
+	-- spawning & falling timing
+	-- (note: spawn timings will be locked to the start of a fall period)
 	initial_spawn_t = 5,
 	spawn_interval_range_t = {3,5},
 	spawn_positions = {
 		{x=7,y=0},
 		{x=8,y=0},
 	},
-	fall_period_seconds = 1,
+	fall_period_seconds = 0.1,
 
 	-- drawing
 	sprites = {
@@ -78,9 +77,7 @@ function sand:spawn()
 	local until_next = rnd(self.spawn_interval_range_t[2] - self.spawn_interval_range_t[1]) + self.spawn_interval_range_t[1]
 	self.t_next_spawn = time() + until_next
 
-	local spawn_pos = rnd(self.spawn_positions)
-	printh("getting spawn pos "..table_str(spawn_pos))
-	self:set_tile_is_sand(spawn_pos, true)
+	self:set_tile_is_sand(rnd(self.spawn_positions), true)
 
 	self.pieces_spawned += 1
 end
@@ -119,12 +116,15 @@ function sand:update()
 
 	local now = time()
 
-	if now > self.t_next_spawn then
-		self:spawn()
-	end
-
 	if now - self.t_last_fall > self.fall_period_seconds then
 		self:fall()
+
+		-- note: putting this check in the fall tick check means we'll always spawn at
+		-- the start of a fall tick, so you won't see weird behaviour where a block
+		-- spawns then immediately falls
+		if now > self.t_next_spawn then
+			self:spawn()
+		end
 	end
 end
 
@@ -167,7 +167,6 @@ function sand:draw_sand()
 					sprite = self.sprites.falling
 				end
 				local pos = pixels(tile)
-				printh("drawing tile pos "..table_str(tile).." -> pixel pos "..table_str(pos))
 				spr(sprite, pos.x, pos.y)
 			end
 		end
