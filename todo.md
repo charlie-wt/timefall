@@ -8,17 +8,17 @@
 * [x] intro scene
 * [x] death scene
 * [x] more death conditions
-* [ ] sfx
+* [~] sfx
     * [x] new sand fall
     * [x] sand landed
     * [x] sand shunted
     * [x] jump
     * [ ] run
     * [ ] death
-* [ ] music
+* [~] music
     * [ ] gameplay
         * [ ] two alternatives, for different sides of the hourglass?
-    * [ ] flip jingle
+    * [x] flip jingle
 * [x] draw background stars
 
 * [x] make page
