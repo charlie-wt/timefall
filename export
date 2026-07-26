@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# only cause i always forget
+
+/home/charliew/Applications/pico-8/pico8 -export ./index.html ./game.p8
+
+echo "if it wants a label: ctrl+7 to capture (then ctrl+s to save)"
