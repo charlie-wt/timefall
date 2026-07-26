@@ -32,25 +32,59 @@ function rspr(sx,sy,x,y,a,w)
 	end
 end
 
+local rotation_sprite_buffer = {x=64, y=64}
+local full_sprite_w_tiles = 8
+local effective_sprite_w_tiles = 4
+
 function draw_hourglass_top()
-	local sprite_loc = {x=00, y=32}
-	local rotation_sprite_buffer = {x=72, y=32}
-	local sprite_width_tiles = 8
+	local sprite_loc = {x=00, y=24}
 
 	local angle = time() / 3
-	local scale = 2 + sin(time() / 3)
+	local scale = 1.5--2 + sin(time() / 3)
 
-	local screen_pos = {x=64 - (sprite_width_tiles * scale) * 4, y=64 - (sprite_width_tiles * scale) * 4}
+	local orbit_offset = {
+		x = sin(angle),
+		y = -cos(angle)
+	}
+
+	local screen_pos = {
+		x = -(full_sprite_w_tiles * scale) * 4 + effective_sprite_w_tiles * scale * orbit_offset.x * 8,
+		y = -(full_sprite_w_tiles * scale) * 4 + effective_sprite_w_tiles * scale * orbit_offset.y * 8
+	}
 
 	-- rotate sprite (using another sprite location as buffer)
 	rspr(sprite_loc.x,sprite_loc.y,
 	     rotation_sprite_buffer.x,rotation_sprite_buffer.y,
-	     -angle, sprite_width_tiles)
+	     -angle, full_sprite_w_tiles)
 
 	-- display sprite (inc. scaling)
 	-- spritesheet_{x,y}, sprite_{w,h}_pixels, screen_pos_{x,y}, screen_{w,h}_tiles, flip_{x,y}
 	sspr(rotation_sprite_buffer.x, rotation_sprite_buffer.y,
-	     sprite_width_tiles * 8, sprite_width_tiles * 8,
+	     full_sprite_w_tiles * 8, full_sprite_w_tiles * 8,
 	     screen_pos.x, screen_pos.y,
-	     sprite_width_tiles * 8 * scale, sprite_width_tiles * 8 * scale)
+	     full_sprite_w_tiles * 8 * scale, full_sprite_w_tiles * 8 * scale)
+end
+
+function draw_hourglass_bottom()
+	local sprite_loc = {x=64, y=00}
+
+	local angle = (time() / 3)
+	local scale = 1.5--2 + sin(time() / 3)
+
+	local screen_pos = {
+		x = -(full_sprite_w_tiles * scale) * 4,
+		y = -(full_sprite_w_tiles * scale) * 4
+	}
+
+	-- rotate sprite (using another sprite location as buffer)
+	rspr(sprite_loc.x,sprite_loc.y,
+	     rotation_sprite_buffer.x,rotation_sprite_buffer.y,
+	     -angle, full_sprite_w_tiles)
+
+	-- display sprite (inc. scaling)
+	-- spritesheet_{x,y}, sprite_{w,h}_pixels, screen_pos_{x,y}, screen_{w,h}_tiles, flip_{x,y}
+	sspr(rotation_sprite_buffer.x, rotation_sprite_buffer.y,
+	     full_sprite_w_tiles * 8, full_sprite_w_tiles * 8,
+	     screen_pos.x, screen_pos.y,
+	     full_sprite_w_tiles * 8 * scale, full_sprite_w_tiles * 8 * scale)
 end
