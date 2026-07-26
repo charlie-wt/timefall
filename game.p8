@@ -191,21 +191,6 @@ state = {
 	}
 }
 
--- debug stuff.
-frame_by_frame=false
-dbg_on=frame_by_frame
-dbg_on_last_toggled=nil
-dbg_on_timeout=0.5
-dbg={}
-dbg_colours={10}
-function try_toggle_dbg()
-	local now = time()
-	if dbg_on_last_toggled == nil or now - dbg_on_last_toggled >= dbg_on_timeout then
-		dbg_on = not dbg_on
-		frame_by_frame = dbg_on
-		dbg_on_last_toggled = now
-	end
-end
 
 function print_centred(text, y, col, offset)
 	local x = (128 - lnpx(text)) / 2 + (offset or 0)
@@ -255,8 +240,6 @@ function tile_is_solid(tile)  -- screen pos tile
 end
 
 function _init()
-	-- state.scene = "gameplay"
-	-- state.gameplay:init(true)
 	state.scene = "intro"
 	state.intro:init()
 end
@@ -277,29 +260,11 @@ function lose(reason)
 	state.lose:init(reason)
 end
 
--- holding = true
 function _update()
 	if state.scene == "intro" then
 		state.intro:update()
 	elseif state.scene == "gameplay" then
-		-- if btn(5) then try_toggle_dbg() end
-
-		-- if frame_by_frame then
-		-- 	if holding and not btn(4) then
-		-- 		holding = false
-		-- 		return
-		-- 	end
-		-- 	if btn(4) and not holding then
-		-- 		holding = true
-		-- 	else
-		-- 		return
-		-- 	end
-		-- end
-
-		-- dbg = {}
-
 		player:update()
-		-- dbg = player:dbg_txt()
 
 		if player.pos.y < 0 then
 			flip_hourglass()
@@ -356,15 +321,6 @@ function _draw()
 		-- sand
 		sand:draw_sand()
 
-		-- if in debug mode, gridlines for collision
-		if dbg_on then
-			-- local ptp = pixels(tiles(player.pos))
-			-- spr(017, ptp.x, ptp.y)
-			for tile in all(player:tiles()) do
-				spr(017, tile.x*8, tile.y*8)
-			end
-		end
-
 		-- player
 		player:draw()
 
@@ -377,17 +333,6 @@ function _draw()
 		local score_len = lnpx(score_txt)
 		draw_ui_box({x=128 - score_len - 1, y=0}, score_len + 1, 7)
 		print(score_txt, 128 - score_len, 1, 12)
-
-		-- debug text
-		-- if dbg_on then
-		-- 	for i=1, #dbg do
-		-- 		local txt = ""
-		-- 		if dbg[i] != nil then txt = dbg[i] end
-		-- 		local col = 7
-		-- 		if dbg_colours[i] != nil then col = dbg_colours[i] end
-		-- 		print(txt, 3, i*6+8,col)
-		-- 	end
-		-- end
 	elseif state.scene == "flipping" then
 		cls(0)
 		local y_off = -(1 - cos(state.flipping:progress()/2))/2
