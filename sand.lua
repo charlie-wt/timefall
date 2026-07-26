@@ -82,14 +82,14 @@ end
 -- NOTE: assumes data is initialised but empty (all `false`)
 function sand:predistribute(num_pieces)
 	while num_pieces > 0 do
-		local candidate_tile = {x=flr(rnd(16)), y=flr(rnd(14))+2}
+		local candidate_tile = {x=flr(rnd(16)), y=flr(rnd(12))+4}
 		if terrain:tile_is_background(candidate_tile) and (not tile_is_solid(candidate_tile)) then
 			self:set_tile_is_sand(candidate_tile, true)
 			num_pieces -= 1
 		end
 	end
-
-	-- TODO #finish: fall until fallen?
+	-- (don't have them pre-fall now; bit more interesting to have them fall in
+	-- gameplay, and gives a bit more verisimilitude)
 end
 
 function sand:flip()

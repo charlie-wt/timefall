@@ -1,4 +1,9 @@
-* [ ] more player sprites
+* [x] more player sprites
+    * [x] stand
+    * [x] walk 1 + 2
+        * separate right & left?
+    * [x] jumping
+    * [x] falling
 * [x] better ui for score, pieces to fall
 * [x] intro scene
 * [x] death scene
@@ -15,3 +20,7 @@
         * [ ] two alternatives, for different sides of the hourglass?
     * [ ] flip jingle
 * [ ] draw background stars
+
+* [x] make page
+* [ ] export
+* [ ] submit

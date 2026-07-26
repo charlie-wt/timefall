@@ -6,8 +6,13 @@ player = {
 	acceleration_frames = 4,
 	start_pos = {x=64, y=8},
 	sprites = {
-		fallback=001
+		fallback=001,
+		standing_right=002,
+		running_right={003,004},
+		jumping_right=005,
+		falling_right=006,
 	},
+	running_frames_cycle_time_seconds = 0.25,
 
 	-- state -----------------
 	pos = {x=0,y=0},
@@ -17,12 +22,16 @@ player = {
 	accelerated_for_frames = 0,
 	collision_x = 0,
 	collision_y = 0,
+	last_facing = nil,
+	started_running_at_t = nil
 }
 
 function player:init()
 	self.pos = shallow_copy(self.start_pos)
 	self.vel = {x=0, y=0}
 	self.accelerated_for_frames = 0
+	self.last_facing = "right"
+	self.started_running_at_t = nil
 end
 
 -- get the list of tiles ({x,y}) that the player will occupy next frame, if
@@ -156,26 +165,52 @@ function player:update()
 	self:input()
 	self:apply_gravity()
 	self:move()
+
+	if self.vel.x > 0 then
+		self.last_facing = "right"
+	elseif self.vel.x < 0 then
+		self.last_facing = "left"
+	end
 end
 
-function player:dbg_txt()
-	local res = {}
-
-	local dx = "➡️ "
-	if (self.collision_x > 0) dx = "⬅️ "
-	add(res, dx..abs(self.collision_x))
-	local dy = "⬇️ "
-	if (self.collision_y > 0) dy = "⬆️ "
-	add(res, dy..abs(self.collision_y))
-	add(res, "pos:\t"..self.pos.x.."\t\t"..self.pos.y)
-	add(res, "vel:\t"..self.vel.x.."\t\t"..self.vel.y)
-	if (self.grounded) add(res, "grounded")
-
-	return res
+function sprite_cycling(set, period, t)
+	local progress = (t % period) / period
+	local index = flr(progress * #set) + 1
+	return set[index]
 end
 
 function player:draw()
-	-- TODO #finish
 	local current_sprite = self.sprites.fallback
-	spr(current_sprite, self.pos.x, self.pos.y)
+
+	if self.grounded then
+		if self.vel.x == 0 then
+			self.started_running_at_t = nil
+			current_sprite = self.sprites.standing_right
+		else
+			if self.started_running_at_t == nil then
+				self.started_running_at_t = time()
+			end
+
+			current_sprite = sprite_cycling(
+				self.sprites.running_right,
+				self.running_frames_cycle_time_seconds,
+				time() - self.started_running_at_t
+			)
+		end
+	else
+		if self.vel.y < 0 then
+			current_sprite = self.sprites.jumping_right
+		elseif self.vel.y > 0 then
+			current_sprite = self.sprites.falling_right
+		else
+			current_sprite = self.sprites.standing_right
+		end
+	end
+
+	local should_flip = false
+	if self.last_facing == "left" then
+		should_flip = true
+	end
+
+	spr(current_sprite, self.pos.x, self.pos.y, 1, 1, should_flip, false)
 end
