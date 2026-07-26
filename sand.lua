@@ -123,6 +123,7 @@ function sand:spawn()
 	self.t_next_spawn = time() + until_next
 
 	self:set_tile_is_sand(rnd(self.spawn_positions), true)
+	sfx(002)
 
 	self.pieces_spawned += 1
 	self.pieces_dropped += 1
@@ -143,6 +144,8 @@ function sand:fall()
 		new_data[tile.y + 1][tile.x + 1] = value
 	end
 
+	local played_sound_this_time = false
+
 	for y=0,15 do
 		for x=0,15 do
 			local tile = {x=x, y=y}
@@ -151,6 +154,10 @@ function sand:fall()
 				if y < 15 and not tile_is_solid(below(tile)) then
 					set_new_data(tile, false)
 					set_new_data(below(tile), true)
+					if not played_sound_this_time and tile_is_solid(below(below(tile))) then
+						sfx(000)
+						played_sound_this_time = true
+					end
 				end
 			end
 		end
@@ -200,6 +207,7 @@ function sand:try_shunt(tile, dir)
 	if not tile_is_solid(destination) then
 		self:set_tile_is_sand(tile, false)
 		self:set_tile_is_sand(destination, true)
+		sfx(001)
 	end
 end
 

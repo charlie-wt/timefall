@@ -9,11 +9,11 @@
 * [x] death scene
 * [x] more death conditions
 * [ ] sfx
-    * [ ] new sand fall
-    * [ ] jump
+    * [x] new sand fall
+    * [x] sand landed
+    * [x] sand shunted
+    * [x] jump
     * [ ] run
-    * [ ] sand landed
-    * [ ] sand shunted
     * [ ] death
 * [ ] music
     * [ ] gameplay

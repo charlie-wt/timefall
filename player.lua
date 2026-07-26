@@ -85,6 +85,7 @@ function player:input()
 	-- y
 	if btn(2) and self.grounded then
 		self.vel.y = -self:jump_speed()
+		sfx(003)
 	end
 end
 
