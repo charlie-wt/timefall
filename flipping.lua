@@ -1,4 +1,8 @@
 local rspr_clear_col=0
+local rotation_sprite_buffer = {x=64, y=64}
+local full_sprite_w_tiles = 8
+local effective_sprite_w_tiles = 4
+
 -- sx: source spritesheet x (pixels)
 -- sy: source spritesheet y (pixels)
 -- x: spritesheet buffer space x
@@ -32,15 +36,20 @@ function rspr(sx,sy,x,y,a,w)
 	end
 end
 
-local rotation_sprite_buffer = {x=64, y=64}
-local full_sprite_w_tiles = 8
-local effective_sprite_w_tiles = 4
+function _angle()
+	return state.flipping:progress()/2
+end
+
+function _scale()
+	local amp = 2
+	return 1 + amp * (1 + cos(state.flipping:progress())/2)
+end
 
 function draw_hourglass_top()
 	local sprite_loc = {x=00, y=24}
 
-	local angle = state.flipping:progress()/2
-	local scale = 2 + cos(state.flipping:progress())/2
+	local angle = _angle()
+	local scale = _scale()
 
 	local orbit_offset = {
 		x = sin(angle),
@@ -68,8 +77,8 @@ end
 function draw_hourglass_bottom()
 	local sprite_loc = {x=64, y=00}
 
-	local angle = state.flipping:progress()/2
-	local scale = 2 + cos(state.flipping:progress())/2
+	local angle = _angle()
+	local scale = _scale()
 
 	local screen_pos = {
 		x = -(full_sprite_w_tiles * scale) * 4,

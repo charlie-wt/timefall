@@ -1,5 +1,5 @@
 terrain = {
-	solid_tiles = {033,034,035},
+	solid_tiles = {033,034,035,192,193,194,195,208,209,210,211},
 	hourglass_background_tile = 032
 }
 
