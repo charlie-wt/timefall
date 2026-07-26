@@ -1,6 +1,6 @@
 * [ ] more player sprites
 * [x] better ui for score, pieces to fall
-* [ ] intro scene
+* [x] intro scene
 * [x] death scene
 * [x] more death conditions
 * [ ] sfx

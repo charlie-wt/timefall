@@ -10,9 +10,97 @@ __lua__
 #include flipping.lua
 
 state = {
-	-- possible values: menu, intro, gameplay, flipping, lose
-	scene = "flipping",
+	-- possible values: title, intro, gameplay, flipping, lose
+	scene = "intro",
 	score_before_current_flip = 0,
+	intro = {
+		total_stages = 8,
+		next_page_timeout = 1,
+
+		sequence_idx = nil,
+		t_started_this_page = nil,
+		holding = nil,
+
+		init = function(self)
+			self.sequence_idx = 1
+			self.holding = true
+		end,
+
+		update = function(self)
+			local now = time()
+			if self.t_started_this_page == nil then
+				self.t_started_this_page = now
+				return
+			end
+
+			local pressing_now = btn(4) or btn(5)
+
+			if self.holding and not pressing_now then
+				self.holding = false
+			end
+
+			if (not self.holding or (now - self.t_started_this_page > self.next_page_timeout)) and
+			   pressing_now then
+				self.holding = true
+				self.sequence_idx += 1
+				if self.sequence_idx > self.total_stages then
+					state.scene = "gameplay"
+					state.gameplay:init()
+					return
+				end
+				self.t_started_this_page = now
+			end
+		end,
+
+		draw = function(self)
+			cls(0)
+			if self.sequence_idx == 1 then
+				local txt = "time traveller!"
+				local txt_y = 64
+				print_centred(txt, txt_y + 1, 2)
+				print_centred(txt, txt_y, 8)
+			elseif self.sequence_idx == 2 then
+				local angered = "YOU HAVE ANGERED ME,"
+				local angered_y = 64
+				print_centred(angered, angered_y, 7)
+			elseif self.sequence_idx == 3 then
+				local angered = "YOU HAVE ANGERED ME,"
+				local angered_y = 64
+				print_centred(angered, angered_y, 7)
+
+				local father = "grandfather time!"
+				local father_y = 64 + 8
+				print_centred(father, father_y + 1, 4)
+				print_centred(father, father_y, 10)
+			elseif self.sequence_idx == 4 then
+				local meddling = "your meddling will not"
+				local meddling_y = 64
+				print_centred(meddling, meddling_y, 7)
+
+				print_centred_chunks({{"go ", 7}, {"unpunished", 8}, {"!", 7}}, meddling_y + 8)
+			elseif self.sequence_idx == 5 then
+				local trapped = "I HAVE TRAPPED YOU IN THE"
+				local trapped_y = 56
+				print_centred(trapped, trapped_y, 7)
+				print_centred_chunks({{"HOURGLASS OF TIME", 9}, {"...", 7}}, trapped_y + 8)
+				print_centred_chunks({{"now you must ", 7}, {"keep the", 7, 2}}, trapped_y + 24)
+				local flowing = "sands flowing!"
+				print_centred(flowing, trapped_y + 32 + 1, 2)
+				print_centred(flowing, trapped_y + 32, 7)
+			elseif self.sequence_idx == 6 then
+				local drain_y = 56
+				print_centred("• DON'T LET THE SAND DRAIN", drain_y, 7)
+				print_centred("• DON'T LET THE SAND FILL UP", drain_y + 8, 7)
+				print_centred("jump to the top to", drain_y + 24, 12)
+				print_centred("flip the hourglass", drain_y + 32, 12)
+			elseif self.sequence_idx == 7 then
+				print_centred("OH, AND...", 64, 7)
+			elseif self.sequence_idx == 8 then
+				print_centred("OH, AND...", 64, 7)
+				print_centred("don't get crushed!", 72, 8)
+			end
+		end
+	},
 	gameplay = {
 		bottom_is_bottom = true,
 		ran_out_of_sand_timeout_seconds = 10,
@@ -167,8 +255,10 @@ function tile_is_solid(tile)  -- screen pos tile
 end
 
 function _init()
-	state.scene = "gameplay"
-	state.gameplay:init(true)
+	-- state.scene = "gameplay"
+	-- state.gameplay:init(true)
+	state.scene = "intro"
+	state.intro:init()
 end
 
 function total_score()
@@ -187,9 +277,11 @@ function lose(reason)
 	state.lose:init(reason)
 end
 
-holding = true
+-- holding = true
 function _update()
-	if state.scene == "gameplay" then
+	if state.scene == "intro" then
+		state.intro:update()
+	elseif state.scene == "gameplay" then
 		-- if btn(5) then try_toggle_dbg() end
 
 		-- if frame_by_frame then
@@ -249,7 +341,9 @@ function draw_ui_box(pos, width, height)
 end
 
 function _draw()
-	if state.scene == "gameplay" then
+	if state.scene == "intro" then
+		state.intro:draw()
+	elseif state.scene == "gameplay" then
 		cls(0)
 
 		-- map
