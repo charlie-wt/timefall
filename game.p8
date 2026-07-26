@@ -9,6 +9,8 @@ __lua__
 #include player.lua
 #include flipping.lua
 
+
+autobg = false
 state = {
 	-- possible values: title, intro, gameplay, flipping, lose
 	scene = "intro",
@@ -57,11 +59,11 @@ state = {
 		draw = function(self)
 			cls(0)
 			draw_stars()
+			autobg = true
 			if self.sequence_idx == 1 then
 				local txt = "time traveller!"
 				local txt_y = 64
-				print_centred(txt, txt_y + 1, 2)
-				print_centred(txt, txt_y, 8)
+				print_centred(txt, txt_y, 8, 2)
 			elseif self.sequence_idx == 2 then
 				local angered = "YOU HAVE ANGERED ME,"
 				local angered_y = 64
@@ -73,8 +75,7 @@ state = {
 
 				local father = "grandfather time!"
 				local father_y = 64 + 8
-				print_centred(father, father_y + 1, 4)
-				print_centred(father, father_y, 10)
+				print_centred(father, father_y, 10, 4)
 			elseif self.sequence_idx == 4 then
 				local meddling = "your meddling will not"
 				local meddling_y = 64
@@ -102,6 +103,7 @@ state = {
 				print_centred("OH, AND...", 64, 7)
 				print_centred("don't get crushed!", 72, 8)
 			end
+			autobg = false
 		end
 	},
 	gameplay = {
@@ -175,36 +177,43 @@ state = {
 		draw = function(self)
 			cls(0)
 			draw_stars()
+			autobg = true
 			local reason_y = 48
-			-- print_centred(self.reason, reason_y + 1, 2)
 			print_centred(self.reason, reason_y, 8)
 
 			local score_y = 64
+			local chunks_of = " chunks of"
+			if total_score() == 1 then
+				chunks_of = " chunk of"
+			end
 			print_centred_chunks({{"you allowed ", 7},
 			                      {tostr(total_score()), 10},
-			                      {" chunks of", 7}},
+			                      {chunks_of, 7}},
 			                     score_y)
-			print_centred("the sands of time", score_y + 8 + 1, 4)
-			print_centred("the sands of time", score_y + 8, 7)
+			print_centred("the sands of time", score_y + 8, 7, 4)
 			print_centred("to fall!", score_y + 16, 7)
 
 			local prompt = "🅾️/❎ TO TRY AGAIN..."
 			local prompt_y = 101
 			print_centred(prompt, prompt_y + 1, 1)
 			print_centred(prompt, prompt_y, 7)
-
+			autobg = false
 		end
 	}
 }
 
 
-function print_centred(text, y, col, offset)
-	local x = (128 - lnpx(text)) / 2 + (offset or 0)
-	if col ~= nil then
-		print(text, x, y, col)
-	else
-		print(text, x, y)
+function print_centred(text, y, col, shadow_col)
+	local len = lnpx(text)
+	local x = (128 - len) / 2
+	if autobg then
+		local pad = 2
+		rectfill(x - pad, y - pad, x + len + pad, y + 3 + pad, 0)
 	end
+	if shadow_col ~= nil then
+		print(text, x, y + 1, shadow_col)
+	end
+	print(text, x, y, col)
 end
 
 function print_centred_chunks(chunks, y)
@@ -218,17 +227,24 @@ function print_centred_chunks(chunks, y)
 	for chunk in all(chunks) do full_length += lnpx(chunk[1]) end
 	local length_acc = 0
 
+	local start_x = (128 - full_length) / 2
+
+	if autobg then
+		local pad = 2
+		rectfill(start_x - pad, y - pad, start_x + full_length + pad, y + 8 + 1 + pad, 0)
+	end
+
 	for chunk in all(chunks) do
 		local col = 7
 		if (#chunk > 1) col = chunk[2]
 
 		if #chunk > 2 then
 			color(chunk[3])
-			print(chunk[1], (128 - full_length) / 2 + length_acc, y + 1)
+			print(chunk[1], start_x + length_acc, y + 1)
 		end
 
 		color(col)
-		print(chunk[1], (128 - full_length) / 2 + length_acc, y )
+		print(chunk[1], start_x + length_acc, y)
 		length_acc += lnpx(chunk[1])
 	end
 end
@@ -371,7 +387,7 @@ function _draw()
 		player:draw()
 
 		-- ui text
-		local left_len = sand:draw_pieces_remaining(999999999999999, 1)
+		local left_len = sand:draw_pieces_remaining(0, 9999)
 		draw_ui_box({x=0, y=0}, left_len + 1, 7)
 		sand:draw_pieces_remaining(1, 1)
 
