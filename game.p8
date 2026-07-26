@@ -40,8 +40,10 @@ state = {
 			self.bottom_to_top = bottom_to_top
 		end,
 
+		-- 'legit' in range [0,1], but will go beyond; when it's outside the range,
+		-- means time to change scene
 		progress = function(self)
-			res = min((time() - self.t_started) / 4, 1)
+			res = (time() - self.t_started) / 4
 			if self.bottom_to_top then
 				return res
 			else
@@ -81,8 +83,7 @@ end
 
 function _init()
 	state.scene = "gameplay"
-	state.gameplay:init(false)
-	state.flipping:init(false)
+	state.gameplay:init(true)
 end
 
 function total_score()
@@ -91,7 +92,9 @@ end
 
 function flip_hourglass()
 	state.score_before_current_flip += sand.pieces_spawned
-	state.gameplay:init(not state.gameplay.bottom_is_bottom)
+
+	state.flipping:init(state.gameplay.bottom_is_bottom)
+	state.scene = "flipping"
 end
 
 holding = true
@@ -123,7 +126,10 @@ function _update()
 
 		sand:update()
 	elseif state.scene == "flipping" then
-		-- TODO #finish
+		if state.flipping:progress() < 0 or state.flipping:progress() > 1 then
+			state.gameplay:init(not state.flipping.bottom_to_top)
+			state.scene = "gameplay"
+		end
 	end
 end
 
@@ -179,6 +185,7 @@ function _draw()
 		camera(-64, -64 - y_off_total_amt*y_off)
 		draw_hourglass_top()
 		draw_hourglass_bottom()
+		camera(0, 0)
 	end
 end
 __gfx__
