@@ -85,6 +85,15 @@ state = {
 			-- print_centred(self.reason, reason_y + 1, 2)
 			print_centred(self.reason, reason_y, 8)
 
+			local score_y = 64
+			print_centred_chunks({{"you allowed ", 7},
+			                      {tostr(total_score()), 10},
+			                      {" chunks of", 7}},
+			                     score_y)
+			print_centred("the sands of time", score_y + 8 + 1, 4)
+			print_centred("the sands of time", score_y + 8, 7)
+			print_centred("to fall!", score_y + 16, 7)
+
 			local prompt = "🅾️/❎ TO TRY AGAIN..."
 			local prompt_y = 101
 			print_centred(prompt, prompt_y + 1, 1)
@@ -116,6 +125,32 @@ function print_centred(text, y, col, offset)
 		print(text, x, y, col)
 	else
 		print(text, x, y)
+	end
+end
+
+function print_centred_chunks(chunks, y)
+	-- print separately-formatted chunks in a single, horizontally-centred line
+	-- chunks is a list of 1-to-3-tuples:
+	-- { { fst_text },                         <-- draw in white
+	--   { snd_text, col }, ... }              <-- draw in col
+	--   { snd_text, col, shadow_col }, ... }  <-- draw in col, with a shadow_col shadow
+
+	local full_length = 0
+	for chunk in all(chunks) do full_length += lnpx(chunk[1]) end
+	local length_acc = 0
+
+	for chunk in all(chunks) do
+		local col = 7
+		if (#chunk > 1) col = chunk[2]
+
+		if #chunk > 2 then
+			color(chunk[3])
+			print(chunk[1], (128 - full_length) / 2 + length_acc, y + 1)
+		end
+
+		color(col)
+		print(chunk[1], (128 - full_length) / 2 + length_acc, y )
+		length_acc += lnpx(chunk[1])
 	end
 end
 
