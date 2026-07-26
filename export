@@ -5,3 +5,13 @@
 /home/charliew/Applications/pico-8/pico8 -export ./index.html ./game.p8
 
 echo "if it wants a label: ctrl+7 to capture (then ctrl+s to save)"
+
+zip "$(basename "$PWD")" index.html index.js
+
+echo ""
+echo "for itch.io:"
+echo ' * upload the .zip & check "this file will be played in the browser" just below'
+echo ' * above, set "kind of project" to "HTML'
+echo ' * set the "embed options" to "embed in page" > "manually set size"'
+echo '    * size: 750px × 680px'
+echo '    * check: "mobile friendly (orientation: default)", "automatically start on page load"'

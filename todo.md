@@ -22,5 +22,5 @@
 * [x] draw background stars
 
 * [x] make page
-* [ ] export
-* [ ] submit
+* [~] export
+* [x] submit
