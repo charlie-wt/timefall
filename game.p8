@@ -145,7 +145,9 @@ function _draw()
 		end
 	elseif state.scene == "flipping" then
 		cls(0)
-		camera(-64, -64)
+		local y_off = -(1 - cos(time()/3))/2
+		local y_off_total_amt = 100
+		camera(-64, -64 - y_off_total_amt*y_off)
 		draw_hourglass_top()
 		draw_hourglass_bottom()
 	end
