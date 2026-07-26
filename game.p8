@@ -266,8 +266,8 @@ function initialise_stars()
 	-- little more uniformity
 	for i=1,state.num_stars do
 		add(state.stars, {
-			x=flr(rnd(128)),
-			y=flr(rnd(128)),
+			x=flr(rnd(96)+16),
+			y=flr(rnd(96)+16),
 			sprite=rnd({018,019})
 		})
 	end
