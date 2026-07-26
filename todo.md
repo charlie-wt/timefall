@@ -19,7 +19,7 @@
     * [ ] gameplay
         * [ ] two alternatives, for different sides of the hourglass?
     * [ ] flip jingle
-* [ ] draw background stars
+* [x] draw background stars
 
 * [x] make page
 * [ ] export
