@@ -16,11 +16,23 @@
     * [ ] run
     * [ ] death
 * [~] music
-    * [ ] gameplay
+    * [~] gameplay
         * [ ] two alternatives, for different sides of the hourglass?
-    * [x] flip jingle
+    * [~] flip jingle
 * [x] draw background stars
 
 * [x] make page
-* [~] export
+* [x] export
 * [x] submit
+
+# after
+
+* better platforming physics
+    * make player slightly smaller than a tile
+    * jump height based on holding up
+* better/more music
+    * alternates for different sides
+* general tuning
+    * too easy (bump speed with flips?)
+    * can be a lot of waiting
+    * maybe wanna put shunting on a button?
