@@ -15,12 +15,22 @@ state = {
 	score_before_current_flip = 0,
 	gameplay = {
 		bottom_is_bottom = true,
+		ran_out_of_sand_timeout_seconds = 10,
+
+		t_ran_out_of_sand = nil,
 
 		init = function(self, bottom_is_bottom)
 			self.bottom_is_bottom = bottom_is_bottom
+			self.t_ran_out_of_sand = nil
 			platforms:init()
 			sand:flip()
 			player:init()
+		end,
+
+		full_restart = function(self)
+			self.score_before_current_flip = 0
+			self:init(true)
+			sand:init()
 		end,
 
 		cam_pos_tiles = function(self)
@@ -50,6 +60,37 @@ state = {
 				return 1-res
 			end
 		end
+	},
+	lose = {
+		restart_timeout_seconds = 1,
+
+		reason = nil,
+		t_started = nil,
+
+		init = function(self, reason)
+			self.reason = reason
+			self.t_started = time()
+		end,
+
+		update = function(self)
+			if (time() - self.t_started > self.restart_timeout_seconds) and (btn(4) or btn(5)) then
+				state.gameplay:full_restart()
+				state.scene = "gameplay"
+			end
+		end,
+
+		draw = function(self)
+			cls(0)
+			local reason_y = 48
+			-- print_centred(self.reason, reason_y + 1, 2)
+			print_centred(self.reason, reason_y, 8)
+
+			local prompt = "🅾️/❎ TO TRY AGAIN..."
+			local prompt_y = 101
+			print_centred(prompt, prompt_y + 1, 1)
+			print_centred(prompt, prompt_y, 7)
+
+		end
 	}
 }
 
@@ -66,6 +107,15 @@ function try_toggle_dbg()
 		dbg_on = not dbg_on
 		frame_by_frame = dbg_on
 		dbg_on_last_toggled = now
+	end
+end
+
+function print_centred(text, y, col, offset)
+	local x = (128 - lnpx(text)) / 2 + (offset or 0)
+	if col ~= nil then
+		print(text, x, y, col)
+	else
+		print(text, x, y)
 	end
 end
 
@@ -97,27 +147,32 @@ function flip_hourglass()
 	state.scene = "flipping"
 end
 
+function lose(reason)
+	state.scene = "lose"
+	state.lose:init(reason)
+end
+
 holding = true
 function _update()
 	if state.scene == "gameplay" then
-		if btn(5) then try_toggle_dbg() end
+		-- if btn(5) then try_toggle_dbg() end
 
-		if frame_by_frame then
-			if holding and not btn(4) then
-				holding = false
-				return
-			end
-			if btn(4) and not holding then
-				holding = true
-			else
-				return
-			end
-		end
+		-- if frame_by_frame then
+		-- 	if holding and not btn(4) then
+		-- 		holding = false
+		-- 		return
+		-- 	end
+		-- 	if btn(4) and not holding then
+		-- 		holding = true
+		-- 	else
+		-- 		return
+		-- 	end
+		-- end
 
-		dbg = {}
+		-- dbg = {}
 
 		player:update()
-		dbg = player:dbg_txt()
+		-- dbg = player:dbg_txt()
 
 		if player.pos.y < 0 then
 			flip_hourglass()
@@ -125,11 +180,22 @@ function _update()
 		end
 
 		sand:update()
+
+		local now = time()
+		if sand:pieces_remaining() <= 0 and state.gameplay.t_ran_out_of_sand == nil then
+			state.gameplay.t_ran_out_of_sand = now
+		end
+		if state.gameplay.t_ran_out_of_sand ~= nil and
+		   now - state.gameplay.t_ran_out_of_sand > state.gameplay.ran_out_of_sand_timeout_seconds then
+			lose("ran out of sand!")
+		end
 	elseif state.scene == "flipping" then
 		if state.flipping:progress() < 0 or state.flipping:progress() > 1 then
 			state.gameplay:init(not state.flipping.bottom_to_top)
 			state.scene = "gameplay"
 		end
+	elseif state.scene == "lose" then
+		state.lose:update()
 	end
 end
 
@@ -183,21 +249,16 @@ function _draw()
 		draw_ui_box({x=128 - score_len - 1, y=0}, score_len + 1, 7)
 		print(score_txt, 128 - score_len, 1, 12)
 
-		-- TODO #finish
-		if player.is_dead then
-			print("dead", 104, 8, 8)
-		end
-
 		-- debug text
-		if dbg_on then
-			for i=1, #dbg do
-				local txt = ""
-				if dbg[i] != nil then txt = dbg[i] end
-				local col = 7
-				if dbg_colours[i] != nil then col = dbg_colours[i] end
-				print(txt, 3, i*6+8,col)
-			end
-		end
+		-- if dbg_on then
+		-- 	for i=1, #dbg do
+		-- 		local txt = ""
+		-- 		if dbg[i] != nil then txt = dbg[i] end
+		-- 		local col = 7
+		-- 		if dbg_colours[i] != nil then col = dbg_colours[i] end
+		-- 		print(txt, 3, i*6+8,col)
+		-- 	end
+		-- end
 	elseif state.scene == "flipping" then
 		cls(0)
 		local y_off = -(1 - cos(state.flipping:progress()/2))/2
@@ -206,6 +267,8 @@ function _draw()
 		draw_hourglass_top()
 		draw_hourglass_bottom()
 		camera(0, 0)
+	elseif state.scene == "lose" then
+		state.lose:draw()
 	end
 end
 __gfx__

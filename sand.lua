@@ -112,6 +112,13 @@ end
 function sand:spawn()
 	if self:pieces_remaining() == 0 then return end
 
+	for x=0,15 do
+		if self:tile_is_sand({x=x, y=0}) then
+			lose("sand reached the top!")
+			return
+		end
+	end
+
 	local until_next = rnd(self.spawn_interval_range_t[2] - self.spawn_interval_range_t[1]) + self.spawn_interval_range_t[1]
 	self.t_next_spawn = time() + until_next
 
@@ -170,7 +177,7 @@ function sand:update()
 	end
 
 	if self:tile_is_sand(tiles(player.pos)) then
-		player:die()
+		lose("you were crushed by sand!")
 	end
 end
 

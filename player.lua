@@ -17,12 +17,10 @@ player = {
 	accelerated_for_frames = 0,
 	collision_x = 0,
 	collision_y = 0,
-	is_dead = false
 }
 
 function player:init()
 	self.pos = shallow_copy(self.start_pos)
-	self.is_dead = false
 end
 
 -- get the list of tiles ({x,y}) that the player will occupy next frame, if
@@ -178,8 +176,4 @@ function player:draw()
 	-- TODO #finish
 	local current_sprite = self.sprites.fallback
 	spr(current_sprite, self.pos.x, self.pos.y)
-end
-
-function player:die()
-	self.is_dead = true
 end

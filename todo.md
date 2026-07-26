@@ -1,8 +1,8 @@
 * [ ] more player sprites
 * [x] better ui for score, pieces to fall
 * [ ] intro scene
-* [ ] death scene
-* [ ] more death conditions
+* [x] death scene
+* [x] more death conditions
 * [ ] sfx
     * [ ] new sand fall
     * [ ] jump
@@ -10,6 +10,8 @@
     * [ ] sand landed
     * [ ] sand shunted
     * [ ] death
-* [ ] gameplay music
-    * [ ] two, for different sides of the hourglass?
-* [ ] flip jingle
+* [ ] music
+    * [ ] gameplay
+        * [ ] two alternatives, for different sides of the hourglass?
+    * [ ] flip jingle
+* [ ] draw background stars
