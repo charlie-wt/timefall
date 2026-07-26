@@ -204,7 +204,7 @@ function sand:draw_pieces_remaining(x, y)
 			colour = col
 		end
 	end
-	print(tostr(self:pieces_remaining()), x, y, colour)
+	return print("to fall: "..tostr(self:pieces_remaining()), x, y, colour)
 end
 
 function sand:draw_sand()

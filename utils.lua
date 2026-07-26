@@ -18,6 +18,10 @@ function pixels(pos)
 	return {x=pos.x*8, y=pos.y*8}
 end
 
+function lnpx(text) -- length of text in pixels
+	return print(text, 0, 999999)
+end
+
 function shallow_copy(orig)
 	local orig_type = type(orig)
 	local copy

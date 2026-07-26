@@ -133,6 +133,20 @@ function _update()
 	end
 end
 
+function draw_ui_box(pos, width, height)
+	rrect(pos.x - 1, pos.y,
+	      width + 2, height + 2,
+	      1,
+	      2)
+	rrect(pos.x - 1, pos.y - 1,
+	      width + 2, height + 2,
+	      1,
+	      6)
+	rectfill(pos.x, pos.y,
+	         pos.x + (width - 1), pos.y + (height - 1),
+	         0)
+end
+
 function _draw()
 	if state.scene == "gameplay" then
 		cls(0)
@@ -160,8 +174,14 @@ function _draw()
 		player:draw()
 
 		-- ui text
-		sand:draw_pieces_remaining(8, 8)
-		print(total_score(), 8, 16, 12)
+		local left_len = sand:draw_pieces_remaining(999999999999999, 1)
+		draw_ui_box({x=0, y=0}, left_len + 1, 7)
+		sand:draw_pieces_remaining(1, 1)
+
+		local score_txt = "score: "..total_score()
+		local score_len = lnpx(score_txt)
+		draw_ui_box({x=128 - score_len - 1, y=0}, score_len + 1, 7)
+		print(score_txt, 128 - score_len, 1, 12)
 
 		-- TODO #finish
 		if player.is_dead then
