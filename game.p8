@@ -106,10 +106,12 @@ state = {
 		ran_out_of_sand_timeout_seconds = 10,
 
 		t_ran_out_of_sand = nil,
+		has_entered_field = nil,
 
 		init = function(self, bottom_is_bottom)
 			self.bottom_is_bottom = bottom_is_bottom
 			self.t_ran_out_of_sand = nil
+			self.has_entered_field = false
 			platforms:init()
 			sand:flip()
 			player:init()
@@ -267,8 +269,12 @@ function _update()
 		player:update()
 
 		if player.pos.y < 0 then
-			flip_hourglass()
-			return
+			if state.gameplay.has_entered_field then
+				flip_hourglass()
+				return
+			end
+		elseif not state.gameplay.has_entered_field then
+			state.gameplay.has_entered_field = true
 		end
 
 		sand:update()

@@ -21,6 +21,8 @@ player = {
 
 function player:init()
 	self.pos = shallow_copy(self.start_pos)
+	self.vel = {x=0, y=0}
+	self.accelerated_for_frames = 0
 end
 
 -- get the list of tiles ({x,y}) that the player will occupy next frame, if
