@@ -17,6 +17,15 @@ state = {
 		score_before_current_flip = 0
 	},
 	flipping = {
+		t_started = nil,
+
+		init = function(self)
+			self.t_started = time()
+		end,
+
+		progress = function(self)
+			return min((time() - self.t_started) / 4, 1)
+		end
 	}
 }
 
@@ -53,6 +62,7 @@ function _init()
 	platforms:init()
 
 	state.scene = "flipping"
+	state.flipping:init()
 end
 
 function total_score()
@@ -145,8 +155,8 @@ function _draw()
 		end
 	elseif state.scene == "flipping" then
 		cls(0)
-		local y_off = -(1 - cos(time()/3))/2
-		local y_off_total_amt = 100
+		local y_off = -(1 - cos(state.flipping:progress()/2))/2
+		local y_off_total_amt = 94
 		camera(-64, -64 - y_off_total_amt*y_off)
 		draw_hourglass_top()
 		draw_hourglass_bottom()

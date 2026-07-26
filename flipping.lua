@@ -39,8 +39,8 @@ local effective_sprite_w_tiles = 4
 function draw_hourglass_top()
 	local sprite_loc = {x=00, y=24}
 
-	local angle = time() / 3
-	local scale = 2 + cos(time() * 2 / 3)/2
+	local angle = state.flipping:progress()/2
+	local scale = 2 + cos(state.flipping:progress())/2
 
 	local orbit_offset = {
 		x = sin(angle),
@@ -68,8 +68,8 @@ end
 function draw_hourglass_bottom()
 	local sprite_loc = {x=64, y=00}
 
-	local angle = time() / 3
-	local scale = 2 + cos(time() * 2 / 3)/2
+	local angle = state.flipping:progress()/2
+	local scale = 2 + cos(state.flipping:progress())/2
 
 	local screen_pos = {
 		x = -(full_sprite_w_tiles * scale) * 4,
