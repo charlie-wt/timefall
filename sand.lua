@@ -82,7 +82,7 @@ end
 -- NOTE: assumes data is initialised but empty (all `false`)
 function sand:predistribute(num_pieces)
 	while num_pieces > 0 do
-		local candidate_tile = {x=flr(rnd(16)), y=flr(rnd(16))}
+		local candidate_tile = {x=flr(rnd(16)), y=flr(rnd(14))+2}
 		if terrain:tile_is_background(candidate_tile) and (not tile_is_solid(candidate_tile)) then
 			self:set_tile_is_sand(candidate_tile, true)
 			num_pieces -= 1
@@ -93,6 +93,14 @@ function sand:predistribute(num_pieces)
 end
 
 function sand:flip()
+	if self.data == nil then
+		-- bit of a hack to not have to worry back out in `scenes.gameplay` whether we
+		-- need to `sand:init` or `sand:flip`, depending on whether this is the first
+		-- iteration
+		self:init()
+		return
+	end
+
 	local to_predistribute = self.total_pieces - self.pieces_spawned
 
 	self:init()

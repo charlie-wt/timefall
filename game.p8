@@ -19,7 +19,7 @@ state = {
 		init = function(self, bottom_is_bottom)
 			self.bottom_is_bottom = bottom_is_bottom
 			platforms:init()
-			sand:init()
+			sand:flip()
 			player:init()
 		end,
 

@@ -4,7 +4,7 @@ player = {
 	jump_height = 30,
 	gravity = 0.8,
 	acceleration_frames = 4,
-	start_pos = {x=64, y=96},
+	start_pos = {x=64, y=8},
 	sprites = {
 		fallback=001
 	},
