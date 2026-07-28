@@ -12,11 +12,32 @@ __lua__
 
 autobg = false
 state = {
-	-- possible values: title, intro, gameplay, flipping, lose
 	scene = "intro",
 	score_before_current_flip = 0,
 	num_stars = 30,
 	stars = {},
+
+	-- (if scene doesn't have function, silently skip)
+	try_call_on_scene = function(self, scene_name, fn_name, ...)
+		local sc = self[scene_name]
+		assert(sc ~= nil, "no such scene "..scene_name)
+		if sc[fn_name] ~= nil then
+			sc[fn_name](sc, ...)
+		else
+			printh(scene_name.." has no handler "..fn_name)
+		end
+	end,
+
+	try_call_on_current_scene = function(self, fn_name, ...)
+		return self:try_call_on_scene(self.scene, fn_name, ...)
+	end,
+
+	-- varargs are forwarded to `state[new_scene_name]:init`
+	switch_to_scene = function(self, new_scene_name, ...)
+		self:try_call_on_scene(new_scene_name, "init", ...)
+		self.scene = new_scene_name
+	end,
+
 	intro = {
 		total_stages = 8,
 		next_page_timeout = 1,
@@ -49,8 +70,7 @@ state = {
 				self.holding = true
 				self.sequence_idx += 1
 				if self.sequence_idx > self.total_stages then
-					state.scene = "gameplay"
-					state.gameplay:init()
+					state:switch_to_scene("gameplay", true)
 					return
 				end
 				self.t_started_this_page = now
@@ -136,6 +156,58 @@ state = {
 			else
 				return {x=16, y=16}
 			end
+		end,
+
+		update = function(self)
+			player:update()
+
+			-- check if we need to flip, while trying to avoid immediately flipping
+			-- after starting a new iteration
+			if player.pos.y < 0 then
+				if self.has_entered_field then
+					flip_hourglass()
+					return
+				end
+			elseif not self.has_entered_field then
+				self.has_entered_field = true
+			end
+
+			sand:update()
+
+			-- check for if the player has lost due to running out of sand
+			local now = time()
+			if sand:pieces_remaining() <= 0 and self.t_ran_out_of_sand == nil then
+				self.t_ran_out_of_sand = now
+			end
+			if self.t_ran_out_of_sand ~= nil and
+			   now - self.t_ran_out_of_sand > self.ran_out_of_sand_timeout_seconds then
+				lose("ran out of sand!")
+			end
+		end,
+
+		draw = function(self)
+			cls(0)
+			draw_stars()
+
+			-- map
+			local map_location = self:cam_pos_tiles()
+			map(map_location.x, map_location.y, 0, 0, 128, 128)
+
+			draw_stars_foreground()
+
+			platforms:draw()
+			sand:draw_sand()
+			player:draw()
+
+			-- ui text
+			local left_len = sand:draw_pieces_remaining(0, 9999)
+			draw_ui_box({x=0, y=0}, left_len + 1, 7)
+			sand:draw_pieces_remaining(1, 1)
+
+			local score_txt = "score: "..total_score()
+			local score_len = lnpx(score_txt)
+			draw_ui_box({x=128 - score_len - 1, y=0}, score_len + 1, 7)
+			print(score_txt, 128 - score_len, 1, 12)
 		end
 	},
 	flipping = {
@@ -157,6 +229,23 @@ state = {
 			else
 				return 1-res
 			end
+		end,
+
+		update = function(self)
+			if self:progress() < 0 or self:progress() > 1 then
+				state:switch_to_scene("gameplay", not self.bottom_to_top)
+			end
+		end,
+
+		draw = function(self)
+			cls(0)
+			draw_stars()
+			local y_off = -(1 - cos(self:progress()/2))/2
+			local y_off_total_amt = 128
+			camera(-64, -64 - y_off_total_amt*y_off)
+			draw_hourglass_top()
+			draw_hourglass_bottom()
+			camera(0, 0)
 		end
 	},
 	lose = {
@@ -299,8 +388,7 @@ end
 
 function _init()
 	initialise_stars()
-	state.scene = "intro"
-	state.intro:init()
+	state:switch_to_scene("intro")
 end
 
 function total_score()
@@ -310,48 +398,15 @@ end
 function flip_hourglass()
 	state.score_before_current_flip += sand.pieces_spawned
 
-	state.flipping:init(state.gameplay.bottom_is_bottom)
-	state.scene = "flipping"
+	state:switch_to_scene("flipping", state.gameplay.bottom_is_bottom)
 end
 
 function lose(reason)
-	state.scene = "lose"
-	state.lose:init(reason)
+	state:switch_to_scene("lose", reason)
 end
 
 function _update()
-	if state.scene == "intro" then
-		state.intro:update()
-	elseif state.scene == "gameplay" then
-		player:update()
-
-		if player.pos.y < 0 then
-			if state.gameplay.has_entered_field then
-				flip_hourglass()
-				return
-			end
-		elseif not state.gameplay.has_entered_field then
-			state.gameplay.has_entered_field = true
-		end
-
-		sand:update()
-
-		local now = time()
-		if sand:pieces_remaining() <= 0 and state.gameplay.t_ran_out_of_sand == nil then
-			state.gameplay.t_ran_out_of_sand = now
-		end
-		if state.gameplay.t_ran_out_of_sand ~= nil and
-		   now - state.gameplay.t_ran_out_of_sand > state.gameplay.ran_out_of_sand_timeout_seconds then
-			lose("ran out of sand!")
-		end
-	elseif state.scene == "flipping" then
-		if state.flipping:progress() < 0 or state.flipping:progress() > 1 then
-			state.gameplay:init(not state.flipping.bottom_to_top)
-			state.scene = "gameplay"
-		end
-	elseif state.scene == "lose" then
-		state.lose:update()
-	end
+	state:try_call_on_current_scene("update")
 end
 
 function draw_ui_box(pos, width, height)
@@ -369,48 +424,7 @@ function draw_ui_box(pos, width, height)
 end
 
 function _draw()
-	if state.scene == "intro" then
-		state.intro:draw()
-	elseif state.scene == "gameplay" then
-		cls(0)
-		draw_stars()
-
-		-- map
-		local map_location = state.gameplay:cam_pos_tiles()
-		map(map_location.x, map_location.y, 0, 0, 128, 128)
-
-		draw_stars_foreground()
-
-		-- platforms
-		platforms:draw()
-
-		-- sand
-		sand:draw_sand()
-
-		-- player
-		player:draw()
-
-		-- ui text
-		local left_len = sand:draw_pieces_remaining(0, 9999)
-		draw_ui_box({x=0, y=0}, left_len + 1, 7)
-		sand:draw_pieces_remaining(1, 1)
-
-		local score_txt = "score: "..total_score()
-		local score_len = lnpx(score_txt)
-		draw_ui_box({x=128 - score_len - 1, y=0}, score_len + 1, 7)
-		print(score_txt, 128 - score_len, 1, 12)
-	elseif state.scene == "flipping" then
-		cls(0)
-		draw_stars()
-		local y_off = -(1 - cos(state.flipping:progress()/2))/2
-		local y_off_total_amt = 128
-		camera(-64, -64 - y_off_total_amt*y_off)
-		draw_hourglass_top()
-		draw_hourglass_bottom()
-		camera(0, 0)
-	elseif state.scene == "lose" then
-		state.lose:draw()
-	end
+	state:try_call_on_current_scene("draw")
 end
 __gfx__
 00000000024444900244424002444240024442400244424002444240000000000000000000000000000000000000000000000000000000000000000000000000
