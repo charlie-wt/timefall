@@ -396,7 +396,7 @@ function total_score()
 end
 
 function flip_hourglass()
-	state.score_before_current_flip += sand.pieces_spawned
+	state.score_before_current_flip += sand.pieces_dropped
 
 	state:switch_to_scene("flipping", state.gameplay.bottom_is_bottom)
 end
