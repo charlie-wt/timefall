@@ -13,6 +13,7 @@ player = {
 		falling_right=006,
 	},
 	running_frames_cycle_time_seconds = 0.25,
+	collision_size_pixels = 8,
 
 	-- state -----------------
 	pos = {x=0,y=0},
@@ -43,12 +44,28 @@ function player:tiles(vl)
 		y=self.pos.y+vl.y
 	}
 
-	local future_tiles = {
+	local old_future_tiles = {
 		lft=flr(future_pos.x/8),
 		rgt=ceil(future_pos.x/8),
 		top=flr(future_pos.y/8),
 		btm=ceil(future_pos.y/8)
 	}
+	local future_tiles = {
+		-- lft=flr(future_pos.x/8),
+		-- rgt=ceil(future_pos.x/8),
+		-- top=flr(future_pos.y/8),
+		-- btm=ceil(future_pos.y/8)
+		lft=tiles(future_pos.x + self.collision_size_pixels/2),
+		rgt=tiles(future_pos.x - self.collision_size_pixels/2),
+		top=tiles(future_pos.y - self.collision_size_pixels/2),
+		btm=tiles(future_pos.y + self.collision_size_pixels/2)
+	}
+
+	printh("----------------------")
+	printh("old future tiles: "..table_str(old_future_tiles))
+	printh("new future tiles: "..table_str(future_tiles))
+	-- printh("left: "..tostr(future_tiles.left))
+	-- printh("left: "..tostr(future_tiles.left))
 
 	local tiles = {}
 	for j=future_tiles.top, future_tiles.btm do
@@ -105,8 +122,8 @@ function player:get_collision_x()
 	for tile in all(self:tiles(vl)) do
 		if (not tile_is_solid(tile)) goto cont
 
-		local lft = tile.x*8
-		local rgt = (tile.x+1)*8
+		local lft = pixels(tile.x)
+		local rgt = pixels((tile.x+1))
 
 		sand:try_shunt(tile, self.vel.x)
 		if self.vel.x > 0 then
@@ -129,8 +146,8 @@ function player:get_collision_y()
 	for tile in all(self:tiles(vl)) do
 		if (not tile_is_solid(tile)) goto cont
 
-		local top = tile.y*8
-		local btm = (tile.y+1)*8
+		local top = pixels(tile.y)
+		local btm = pixels((tile.y+1))
 
 		if self.vel.y > 0 then
 			return top - (future_pos.y+8)
@@ -214,4 +231,20 @@ function player:draw()
 	end
 
 	spr(current_sprite, self.pos.x, self.pos.y, 1, 1, should_flip, false)
+end
+
+function player:dbg_txt()
+	local res = {}
+
+	local dx = "➡️ "
+	if (self.collision_x > 0) dx = "⬅️ "
+	add(res, dx..abs(self.collision_x))
+	local dy = "⬇️ "
+	if (self.collision_y > 0) dy = "⬆️ "
+	add(res, dy..abs(self.collision_y))
+	add(res, "pos:\t"..self.pos.x.."\t\t"..self.pos.y)
+	add(res, "vel:\t"..self.vel.x.."\t\t"..self.vel.y)
+	if (self.grounded) add(res, "grounded")
+
+	return res
 end

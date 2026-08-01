@@ -10,12 +10,32 @@ function contains(l,x)
 	return false
 end
 
+function map_table(tbl, fn)
+	local res = {}
+	for k,v in pairs(tbl) do
+		res[k] = fn(v)
+	end
+	return res
+end
+
+function map_table_or_value(input, fn)
+	if type(input) == 'table' then
+		local res = {}
+		for k,v in pairs(input) do
+			res[k] = fn(v)
+		end
+		return res
+	else
+		return fn(input)
+	end
+end
+
 function tiles(pos)
-	return {x=round(pos.x/8), y=round(pos.y/8)}
+	return map_table_or_value(pos, function(p) return round(p/8) end)
 end
 
 function pixels(pos)
-	return {x=pos.x*8, y=pos.y*8}
+	return map_table_or_value(pos, function(p) return p*8 end)
 end
 
 function lnpx(text) -- length of text in pixels

@@ -23,8 +23,6 @@ state = {
 		assert(sc ~= nil, "no such scene "..scene_name)
 		if sc[fn_name] ~= nil then
 			sc[fn_name](sc, ...)
-		else
-			printh(scene_name.." has no handler "..fn_name)
 		end
 	end,
 
@@ -159,7 +157,23 @@ state = {
 		end,
 
 		update = function(self)
+			if btn(5) then try_toggle_dbg() end
+			if frame_by_frame then
+				if holding and not btn(4) then
+					holding = false
+					return
+				end
+				if btn(4) and not holding then
+					holding = true
+				else
+					return
+				end
+			end
+			dbg = {}
+
 			player:update()
+
+			dbg = player:dbg_txt()
 
 			-- check if we need to flip, while trying to avoid immediately flipping
 			-- after starting a new iteration
@@ -208,6 +222,27 @@ state = {
 			local score_len = lnpx(score_txt)
 			draw_ui_box({x=128 - score_len - 1, y=0}, score_len + 1, 7)
 			print(score_txt, 128 - score_len, 1, 12)
+
+			-- if in debug mode, gridlines for collision
+			-- if dbg_on then
+			-- local ptp = pixels(tiles(player.pos))
+			-- spr(017, ptp.x, ptp.y)
+			for tile in all(player:tiles()) do
+				printh(017, pixels(tile.x), pixels(tile.y))
+				spr(017, pixels(tile.x), pixels(tile.y))
+			end
+			-- end
+
+			-- debug text
+			if dbg_on then
+				for i=1, #dbg do
+					local txt = ""
+					if dbg[i] != nil then txt = dbg[i] end
+					local col = 7
+					if dbg_colours[i] != nil then col = dbg_colours[i] end
+					print(txt, 3, i*6+8,col)
+				end
+			end
 		end
 	},
 	flipping = {
@@ -295,6 +330,21 @@ state = {
 	}
 }
 
+-- debug stuff.
+frame_by_frame=false
+dbg_on=frame_by_frame
+dbg_on_last_toggled=nil
+dbg_on_timeout=0.5
+dbg={}
+dbg_colours={10}
+function try_toggle_dbg()
+	local now = time()
+	if dbg_on_last_toggled == nil or now - dbg_on_last_toggled >= dbg_on_timeout then
+		dbg_on = not dbg_on
+		frame_by_frame = dbg_on
+		dbg_on_last_toggled = now
+	end
+end
 
 function print_centred(text, y, col, shadow_col)
 	local len = lnpx(text)
@@ -342,16 +392,10 @@ function print_centred_chunks(chunks, y)
 	end
 end
 
--- get tile at screen position {x,y} (in tiles), adjusted for the camera into an
--- absolute position suitable for indexing the map data
-function abs_tile_pos(screen_tile_pos)
-	local map_location = state.gameplay:cam_pos_tiles()
-	return {x=screen_tile_pos.x + map_location.x,
-	        y=screen_tile_pos.y + map_location.y}
-end
-
-function tile_is_solid(tile)  -- screen pos tile
-	return terrain:tile_solid(tile) or sand:tile_is_sand(tile) or platforms:tile_is_solid(tile)
+function tile_is_solid(tile)
+	return terrain:tile_solid(tile) or
+	       sand:tile_is_sand(tile) or
+	       platforms:tile_is_solid(tile)
 end
 
 function initialise_stars()
@@ -397,7 +441,6 @@ end
 
 function flip_hourglass()
 	state.score_before_current_flip += sand.pieces_dropped
-
 	state:switch_to_scene("flipping", state.gameplay.bottom_is_bottom)
 end
 
@@ -405,6 +448,7 @@ function lose(reason)
 	state:switch_to_scene("lose", reason)
 end
 
+holding = true
 function _update()
 	state:try_call_on_current_scene("update")
 end
