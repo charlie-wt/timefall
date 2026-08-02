@@ -183,8 +183,16 @@ function sand:update()
 		end
 	end
 
-	if self:tile_is_sand(tiles(player.pos)) then
-		lose("you were crushed by sand!")
+	-- TODO #bug: update for new player size
+	-- local b = player:bounds()
+	-- if self:tile_is_sand(tiles(pltl)) then
+	-- 	lose("you were crushed by sand!")
+	-- end
+	for tile in all(player:tiles()) do
+		if self:tile_is_sand(tile) and
+		   player:colliding_with({lft=tile.x,rgt=tile.x+8,top=tile.y,btm=tile.y+8}) then
+			lose("you were crushed by sand!")
+		end
 	end
 end
 

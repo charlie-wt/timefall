@@ -13,7 +13,7 @@ player = {
 		falling_right=006,
 	},
 	running_frames_cycle_time_seconds = 0.25,
-	collision_size_pixels = 8,
+	collision_size_pixels = 7.5,
 
 	-- state -----------------
 	pos = {x=0,y=0},
@@ -21,10 +21,12 @@ player = {
 	grounded = false,
 	was_grounded = grounded,
 	accelerated_for_frames = 0,
+	last_facing = nil,
+	started_running_at_t = nil,
+	--- (just for dbg)
 	collision_x = 0,
 	collision_y = 0,
-	last_facing = nil,
-	started_running_at_t = nil
+	pre_collision_vel = {x=0,y=0}
 }
 
 function player:init()
@@ -33,6 +35,35 @@ function player:init()
 	self.accelerated_for_frames = 0
 	self.last_facing = "right"
 	self.started_running_at_t = nil
+end
+
+function player:bounds(vl)
+	local p = self.pos
+	if vl ~= nil then p = {x=p.x+vl.x, y=p.y+vl.y} end
+	return {
+		lft=p.x - self.collision_size_pixels/2,
+		rgt=p.x + self.collision_size_pixels/2 - 1,
+		top=p.y - (self.collision_size_pixels - 1),
+		btm=p.y
+	}
+end
+
+--- rect is {lft, rgt, top, btm}
+function player:colliding_with(rect)
+	local b = self:bounds()
+	if b.lft > rect.lft and
+	   b.rgt < rect.rgt and
+	   b.top > rect.top and
+	   b.btm < rect.btm then
+	   return true  -- player contained in rect
+	end
+	if b.lft < rect.rgt and
+	   b.rgt > rect.lft and
+	   b.top < rect.btm and
+	   b.btm > rect.top then
+	   return true  -- player colliding partially with rect
+	end
+	return false
 end
 
 -- get the list of tiles ({x,y}) that the player will occupy next frame, if
@@ -44,28 +75,8 @@ function player:tiles(vl)
 		y=self.pos.y+vl.y
 	}
 
-	local old_future_tiles = {
-		lft=flr(future_pos.x/8),
-		rgt=ceil(future_pos.x/8),
-		top=flr(future_pos.y/8),
-		btm=ceil(future_pos.y/8)
-	}
-	local future_tiles = {
-		-- lft=flr(future_pos.x/8),
-		-- rgt=ceil(future_pos.x/8),
-		-- top=flr(future_pos.y/8),
-		-- btm=ceil(future_pos.y/8)
-		lft=tiles(future_pos.x + self.collision_size_pixels/2),
-		rgt=tiles(future_pos.x - self.collision_size_pixels/2),
-		top=tiles(future_pos.y - self.collision_size_pixels/2),
-		btm=tiles(future_pos.y + self.collision_size_pixels/2)
-	}
-
-	printh("----------------------")
-	printh("old future tiles: "..table_str(old_future_tiles))
-	printh("new future tiles: "..table_str(future_tiles))
-	-- printh("left: "..tostr(future_tiles.left))
-	-- printh("left: "..tostr(future_tiles.left))
+	local future_bounds = player:bounds(vl)
+	local future_tiles = map_table(future_bounds, function(b) return flr(b/8) end)
 
 	local tiles = {}
 	for j=future_tiles.top, future_tiles.btm do
@@ -114,24 +125,21 @@ end
 -- +ve means collider on *left*
 function player:get_collision_x()
 	local vl = {x=self.vel.x, y=0}
-	local future_pos = {
-		x=self.pos.x+vl.x,
-		y=self.pos.y+vl.y
-	}
+	local future_bounds = player:bounds(vl)
 
 	for tile in all(self:tiles(vl)) do
-		if (not tile_is_solid(tile)) goto cont
+		if (not tile_is_solid(tile)) goto contx
 
-		local lft = pixels(tile.x)
-		local rgt = pixels((tile.x+1))
+		local lft = pixels(tile.x) - 0.1
+		local rgt = pixels(tile.x + 1) + 0.1
 
 		sand:try_shunt(tile, self.vel.x)
 		if self.vel.x > 0 then
-			return lft - (future_pos.x+8)
+			return lft - future_bounds.rgt
 		else
-			return rgt - future_pos.x
+			return rgt - future_bounds.lft
 		end
-		::cont::
+		::contx::
 	end
 	return 0
 end
@@ -141,28 +149,27 @@ end
 -- only counts fully solid tiles, ie. not top-solid.
 function player:get_collision_y()
 	local vl = {x=0, y=self.vel.y}
-	local future_pos = {x=self.pos.x, y=self.pos.y+vl.y}
+	local future_bounds = player:bounds(vl)
 
 	for tile in all(self:tiles(vl)) do
-		if (not tile_is_solid(tile)) goto cont
+		if (not tile_is_solid(tile)) goto conty
 
-		local top = pixels(tile.y)
-		local btm = pixels((tile.y+1))
+		local top = pixels(tile.y) - 0.1
+		local btm = pixels(tile.y + 1) + 0.1
 
 		if self.vel.y > 0 then
-			return top - (future_pos.y+8)
+			return top - future_bounds.btm
 		else
-			-- if sand:tile_is_sand(tile) then
-			-- 	self:die()
-			-- end
-			return btm - future_pos.y
+			return btm - future_bounds.top
 		end
-		::cont::
+		::conty::
 	end
 	return 0
 end
 
 function player:move()
+	self.pre_collision_vel = self.vel
+
 	self.collision_y = self:get_collision_y()
 	self.pos.y += self.vel.y + self.collision_y
 
@@ -230,7 +237,7 @@ function player:draw()
 		should_flip = true
 	end
 
-	spr(current_sprite, self.pos.x, self.pos.y, 1, 1, should_flip, false)
+	spr(current_sprite, self.pos.x - 4, ceil(self.pos.y) - 8, 1, 1, should_flip, false)
 end
 
 function player:dbg_txt()

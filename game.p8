@@ -131,12 +131,35 @@ state = {
 
 		t_ran_out_of_sand = nil,
 		has_entered_field = nil,
+		dbg_on = false,
+		frame_by_frame = false,
+		holding_frame_advance = true,
+		holding_dbg_on = true,
+		dbg_txt={},
+
+		try_toggle_dbg = function(self)
+			if not btn(5) then
+				self.holding_dbg_on = false
+				return
+			end
+			if self.holding_dbg_on then
+				return
+			else
+				self.holding_dbg_on = true
+				self.dbg_on = not self.dbg_on
+				self.frame_by_frame = self.dbg_on
+			end
+		end,
 
 		init = function(self, bottom_is_bottom)
 			music(01)
 			self.bottom_is_bottom = bottom_is_bottom
 			self.t_ran_out_of_sand = nil
 			self.has_entered_field = false
+			self.dbg_on = false
+			self.frame_by_frame = false
+			self.holding_frame_advance = true
+			self.holding_dbg_on = true
 			platforms:init()
 			sand:flip()
 			player:init()
@@ -157,23 +180,23 @@ state = {
 		end,
 
 		update = function(self)
-			if btn(5) then try_toggle_dbg() end
-			if frame_by_frame then
-				if holding and not btn(4) then
-					holding = false
+			self:try_toggle_dbg()
+			if self.frame_by_frame then
+				if self.holding_frame_advance and not btn(4) then
+					self.holding_frame_advance = false
 					return
 				end
-				if btn(4) and not holding then
-					holding = true
+				if btn(4) and not self.holding_frame_advance then
+					self.holding_frame_advance = true
 				else
 					return
 				end
 			end
-			dbg = {}
+			self.dbg_txt = {}
 
 			player:update()
 
-			dbg = player:dbg_txt()
+			self.dbg_txt = player:dbg_txt()
 
 			-- check if we need to flip, while trying to avoid immediately flipping
 			-- after starting a new iteration
@@ -224,22 +247,28 @@ state = {
 			print(score_txt, 128 - score_len, 1, 12)
 
 			-- if in debug mode, gridlines for collision
-			-- if dbg_on then
-			-- local ptp = pixels(tiles(player.pos))
-			-- spr(017, ptp.x, ptp.y)
-			for tile in all(player:tiles()) do
-				printh(017, pixels(tile.x), pixels(tile.y))
-				spr(017, pixels(tile.x), pixels(tile.y))
+			local dv = player.pre_collision_vel
+			if self.dbg_on then
+				-- local dv = {x=player.pre_collision_vel.x, y=0}
+				-- local dv = {x=0, y=player.pre_collision_vel.y}
+				-- local ptp = pixels(tiles(player.pos))
+				for tile in all(player:tiles(dv)) do
+					printh(017, pixels(tile.x), pixels(tile.y))
+					spr(017, pixels(tile.x), pixels(tile.y))
+				end
+				local fb = player:bounds(dv)
+				rect(fb.lft, fb.top, fb.rgt, fb.btm, 12)
+				pset(player.pos.x + dv.x, player.pos.y + dv.y, 8)
 			end
-			-- end
 
 			-- debug text
-			if dbg_on then
-				for i=1, #dbg do
+			if self.dbg_on then
+				for i=1, #self.dbg_txt do
 					local txt = ""
-					if dbg[i] != nil then txt = dbg[i] end
-					local col = 7
-					if dbg_colours[i] != nil then col = dbg_colours[i] end
+					if self.dbg_txt[i] != nil then txt = self.dbg_txt[i] end
+					-- local col = 7
+					-- if dbg_colours[i] != nil then col = dbg_colours[i] end
+					local col = 10
 					print(txt, 3, i*6+8,col)
 				end
 			end
@@ -329,22 +358,6 @@ state = {
 		end
 	}
 }
-
--- debug stuff.
-frame_by_frame=false
-dbg_on=frame_by_frame
-dbg_on_last_toggled=nil
-dbg_on_timeout=0.5
-dbg={}
-dbg_colours={10}
-function try_toggle_dbg()
-	local now = time()
-	if dbg_on_last_toggled == nil or now - dbg_on_last_toggled >= dbg_on_timeout then
-		dbg_on = not dbg_on
-		frame_by_frame = dbg_on
-		dbg_on_last_toggled = now
-	end
-end
 
 function print_centred(text, y, col, shadow_col)
 	local len = lnpx(text)
@@ -448,7 +461,6 @@ function lose(reason)
 	state:switch_to_scene("lose", reason)
 end
 
-holding = true
 function _update()
 	state:try_call_on_current_scene("update")
 end
