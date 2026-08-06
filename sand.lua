@@ -9,7 +9,10 @@ sand = {
 		{x=7,y=0},
 		{x=8,y=0},
 	},
-	fall_period_seconds = 0.5,
+	fall_period_seconds = {  -- !!! {score_threshold, seconds}; must be ascending !!!
+		{0, 0.5},
+		{250, 0.1}
+	},
 
 	-- drawing
 	sprites = {
@@ -166,12 +169,35 @@ function sand:fall()
 	self.data = new_data
 end
 
+function sand:next_fall_seconds()
+	-- TODO #enhancement: having sharp thresholds might be better than lerping, in terms
+	-- of being able to learn the timings?
+	local s = total_score()
+	local lerp_from = self.fall_period_seconds[1]
+	local lerp_to = self.fall_period_seconds[1]
+	for candidate in all(self.fall_period_seconds) do
+		if candidate[1] >= s then
+			lerp_to = candidate
+			break
+		else
+			lerp_from = candidate
+		end
+	end
+
+	if lerp_from == lerp_to then
+		return lerp_to[2]
+	end
+
+	local progress = max(0, min(1, (s - lerp_from[1]) / (lerp_to[1] - lerp_from[1])))
+	return progress * (lerp_to[2] - lerp_from[2]) + lerp_from[2]
+end
+
 function sand:update()
 	assert(self.data ~= nil)
 
 	local now = time()
 
-	if now - self.t_last_fall > self.fall_period_seconds then
+	if now - self.t_last_fall > self:next_fall_seconds() then
 		self.t_last_fall = now
 		self:fall()
 
