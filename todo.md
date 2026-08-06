@@ -28,12 +28,13 @@
 # after
 
 * [~] better platforming physics
-    * [x] make player slightly smaller than a tile
-    * [ ] jump height based on holding up
+    * [~] make player slightly smaller than a tile
+        * [ ] update sand collision
+    * [x] jump height based on holding up
 * [ ] better/more music
     * [ ] alternates for different sides
-* [ ] general tuning
-    * [ ] too easy (bump speed with flips?)
+* [~] general tuning
+    * [x] too easy (bump speed with flips?)
     * [ ] can be a lot of waiting
         * add something that's chasing you?
     * [ ] maybe wanna put shunting on a button?
