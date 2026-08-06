@@ -1,9 +1,10 @@
 player = {
 	-- params ----------------
 	run_speed = 3,
-	jump_height = 30,
+	max_jump_height = 30,
 	gravity = 0.8,
 	acceleration_frames = 4,
+	min_jump_hold_time = 0.1,
 	start_pos = {x=64, y=8},
 	sprites = {
 		fallback=001,
@@ -22,7 +23,9 @@ player = {
 	was_grounded = grounded,
 	accelerated_for_frames = 0,
 	last_facing = nil,
-	started_running_at_t = nil,
+	t_started_running = nil,
+	t_started_jumping = nil,
+
 	--- (just for dbg)
 	collision_x = 0,
 	collision_y = 0,
@@ -34,7 +37,8 @@ function player:init()
 	self.vel = {x=0, y=0}
 	self.accelerated_for_frames = 0
 	self.last_facing = "right"
-	self.started_running_at_t = nil
+	self.t_started_running = nil
+	self.t_started_jumping = nil
 end
 
 function player:bounds(vl)
@@ -88,8 +92,8 @@ function player:tiles(vl)
 	return tiles
 end
 
-function player:jump_speed()
-	return sqrt(2 * self.gravity * self.jump_height)
+function player:max_jump_speed()
+	return sqrt(2 * self.gravity * self.max_jump_height)
 end
 
 function player:input()
@@ -111,9 +115,24 @@ function player:input()
 	self.vel.x = self.run_speed * w
 
 	-- y
-	if btn(2) and self.grounded then
-		self.vel.y = -self:jump_speed()
-		sfx(003)
+	local now = time()
+	if self.grounded then
+		if btn(2) then
+			-- jump
+			self.vel.y = -self:max_jump_speed()
+			sfx(003)
+			self.t_started_jumping = now
+		else
+			self.t_started_jumping = nil
+		end
+	end
+
+	if (not btn(2)) and
+	   (self.t_started_jumping ~= nil and now - self.t_started_jumping > self.min_jump_hold_time) then
+		-- cancelled jump early: set vel.y to 0
+		-- ...but could also just be that we've done a max height jump
+		self.vel.y = max(0, self.vel.y)
+		self.t_started_jumping = nil
 	end
 end
 
@@ -209,17 +228,18 @@ function player:draw()
 
 	if self.grounded then
 		if self.vel.x == 0 then
-			self.started_running_at_t = nil
+			self.t_started_running = nil
 			current_sprite = self.sprites.standing_right
 		else
-			if self.started_running_at_t == nil then
-				self.started_running_at_t = time()
+			local now = time()
+			if self.t_started_running == nil then
+				self.t_started_running = now
 			end
 
 			current_sprite = sprite_cycling(
 				self.sprites.running_right,
 				self.running_frames_cycle_time_seconds,
-				time() - self.started_running_at_t
+				now - self.t_started_running
 			)
 		end
 	else
