@@ -14,6 +14,8 @@ sand = {
 		{250, 0.1}
 	},
 
+	to_predistribute_at_start = 15,
+
 	-- drawing
 	sprites = {
 		settled = 034,
@@ -32,7 +34,7 @@ sand = {
 	t_next_spawn = nil,
 	t_last_fall = nil,
 	pieces_spawned = nil,
-	pieces_dropped = nil
+	pieces_dropped = nil,
 }
 
 function sand:pieces_remaining()
@@ -84,9 +86,13 @@ end
 
 -- NOTE: assumes data is initialised but empty (all `false`)
 function sand:predistribute(num_pieces)
+	local spx = tiles(player.start_pos.x)
 	while num_pieces > 0 do
 		local candidate_tile = {x=flr(rnd(16)), y=flr(rnd(12))+4}
-		if terrain:tile_is_background(candidate_tile) and (not tile_is_solid(candidate_tile)) then
+		if terrain:tile_is_background(candidate_tile) and
+		   (not tile_is_solid(candidate_tile)) and
+		   -- don't have sand spawn right under the player; have them always fall a bit
+		   not ((candidate_tile.x == spx or candidate_tile.x == spx - 1) and candidate_tile.y < 10) then
 			self:set_tile_is_sand(candidate_tile, true)
 			num_pieces -= 1
 		end
@@ -101,6 +107,8 @@ function sand:flip()
 		-- need to `sand:init` or `sand:flip`, depending on whether this is the first
 		-- iteration
 		self:init()
+		self:predistribute(self.to_predistribute_at_start)
+		self.pieces_spawned = self.to_predistribute_at_start
 		return
 	end
 
@@ -209,16 +217,8 @@ function sand:update()
 		end
 	end
 
-	-- TODO #bug: update for new player size
-	-- local b = player:bounds()
-	-- if self:tile_is_sand(tiles(pltl)) then
-	-- 	lose("you were crushed by sand!")
-	-- end
-	for tile in all(player:tiles()) do
-		if self:tile_is_sand(tile) and
-		   player:colliding_with({lft=tile.x,rgt=tile.x+8,top=tile.y,btm=tile.y+8}) then
-			lose("you were crushed by sand!")
-		end
+	if self:tile_is_sand(tiles(player.pos)) then
+		lose("you were crushed by sand!")
 	end
 end
 

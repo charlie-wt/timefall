@@ -41,6 +41,10 @@ function player:init()
 	self.t_started_jumping = nil
 end
 
+function player:centre()
+	return {x=self.pos.x, y=self.pos.y - (self.collision_size_pixels/2 - 1)}
+end
+
 function player:bounds(vl)
 	local p = self.pos
 	if vl ~= nil then p = {x=p.x+vl.x, y=p.y+vl.y} end
@@ -52,23 +56,23 @@ function player:bounds(vl)
 	}
 end
 
---- rect is {lft, rgt, top, btm}
-function player:colliding_with(rect)
-	local b = self:bounds()
-	if b.lft > rect.lft and
-	   b.rgt < rect.rgt and
-	   b.top > rect.top and
-	   b.btm < rect.btm then
-	   return true  -- player contained in rect
-	end
-	if b.lft < rect.rgt and
-	   b.rgt > rect.lft and
-	   b.top < rect.btm and
-	   b.btm > rect.top then
-	   return true  -- player colliding partially with rect
-	end
-	return false
-end
+-- --- rect is {lft, rgt, top, btm}
+-- function player:colliding_with(rect)
+-- 	local b = self:bounds()
+-- 	if b.lft >= rect.lft and
+-- 	   b.rgt <= rect.rgt and
+-- 	   b.top >= rect.top and
+-- 	   b.btm <= rect.btm then
+-- 	   return true  -- player contained in rect
+-- 	end
+-- 	if b.lft <= rect.rgt and
+-- 	   b.rgt >= rect.lft and
+-- 	   b.top <= rect.btm and
+-- 	   b.btm >= rect.top then
+-- 	   return true  -- player intersecting with rect
+-- 	end
+-- 	return false
+-- end
 
 -- get the list of tiles ({x,y}) that the player will occupy next frame, if
 -- their velocity is `vl` (defaults to `vel`)
@@ -79,8 +83,7 @@ function player:tiles(vl)
 		y=self.pos.y+vl.y
 	}
 
-	local future_bounds = player:bounds(vl)
-	local future_tiles = map_table(future_bounds, function(b) return flr(b/8) end)
+	local future_tiles = tiles(player:bounds(vl))
 
 	local tiles = {}
 	for j=future_tiles.top, future_tiles.btm do
@@ -129,8 +132,6 @@ function player:input()
 
 	if (not btn(2)) and
 	   (self.t_started_jumping ~= nil and now - self.t_started_jumping > self.min_jump_hold_time) then
-		-- cancelled jump early: set vel.y to 0
-		-- ...but could also just be that we've done a max height jump
 		self.vel.y = max(0, self.vel.y)
 		self.t_started_jumping = nil
 	end
@@ -217,12 +218,6 @@ function player:update()
 	end
 end
 
-function sprite_cycling(set, period, t)
-	local progress = (t % period) / period
-	local index = flr(progress * #set) + 1
-	return set[index]
-end
-
 function player:draw()
 	local current_sprite = self.sprites.fallback
 
@@ -236,7 +231,7 @@ function player:draw()
 				self.t_started_running = now
 			end
 
-			current_sprite = sprite_cycling(
+			current_sprite = sprite.cycling(
 				self.sprites.running_right,
 				self.running_frames_cycle_time_seconds,
 				now - self.t_started_running

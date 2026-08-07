@@ -31,7 +31,8 @@ function map_table_or_value(input, fn)
 end
 
 function tiles(pos)
-	return map_table_or_value(pos, function(p) return round(p/8) end)
+	-- return map_table_or_value(pos, function(p) return round(p/8) end)
+	return map_table_or_value(pos, function(p) return flr(p/8) end)
 end
 
 function pixels(pos)
